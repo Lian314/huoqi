@@ -1,0 +1,16 @@
+{
+  "name": "emberpact-anchored-tavern",
+  "version": "1.0.0",
+  "private": true,
+  "description": "焰契 · 锈锚酒馆 —— 肉鸽 + 卡牌对战 + 酒馆经营",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js 5173",
+    "check": "node tools/validate.js && node tools/importcheck.js && node tools/uitest.js",
+    "check:data": "node tools/validate.js",
+    "check:imports": "node tools/importcheck.js",
+    "check:ui": "node tools/uitest.js"
+  },
+  "keywords": ["roguelike", "deckbuilder", "card-game", "management", "vanilla-js"],
+  "license": "MIT"
+}
