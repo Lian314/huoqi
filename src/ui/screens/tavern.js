@@ -31,6 +31,9 @@ export function renderTavern({ app, root, params }) {
   const header = el('div', {});
   const tabsBar = el('div', { class: 'hud', style: { gap: '6px', padding: '7px 14px' } });
   const body = el('div', { class: 'scroll' });
+  body.style.backgroundImage = "linear-gradient(rgba(10,12,15,.72), rgba(10,12,15,.85)), url('/assets/backgrounds/bg_tavern.jpg')";
+  body.style.backgroundSize = 'cover';
+  body.style.backgroundPosition = 'center';
   const wrap = el('div', { style: { display: 'contents' } });
   wrap.append(header, tabsBar, body);
   root.append(wrap);

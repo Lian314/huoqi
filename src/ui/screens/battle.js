@@ -52,6 +52,10 @@ export function renderBattle({ app, root, onDispose }) {
   screen.append(banner);
 
   const arena = el('div', { class: 'battle-arena' });
+  const actNum = Math.min(6, Math.max(1, run?.act || 1));
+  arena.style.backgroundImage = `linear-gradient(rgba(10,12,15,.6), rgba(10,12,15,.75)), url('/assets/backgrounds/bg_act${actNum}.jpg')`;
+  arena.style.backgroundSize = 'cover';
+  arena.style.backgroundPosition = 'center';
   screen.append(arena);
   arena.append(el('div', { class: 'arena-band' }));
 

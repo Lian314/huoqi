@@ -4,6 +4,7 @@ export const CHARACTERS = [
   {
     id: 'ch_ashborn', name: '烬裔', title: '锈锚酒馆老板',
     glyph: '🜂', color: '#ff6b35', hp: 70, gold: 100,
+    portrait: '/assets/characters/ch_ashborn.jpg',
     lore: '炉子从没冷过。冷下来的那天，他也是从炉膛里爬出来的。',
     mechanic: '灼烧是他的语言。每场战斗开始时获得 1 点力量；灼烧层数不衰减，可被多张牌反复叠加。',
     relic: 'relic_ember_heart',
@@ -19,6 +20,7 @@ export const CHARACTERS = [
   {
     id: 'ch_ichor', name: '毒医', title: '被酒馆收留的江湖郎中',
     glyph: '⚗', color: '#74b816', hp: 66, gold: 110,
+    portrait: '/assets/characters/ch_ichor.jpg',
     lore: '她说她只治两种病：还没死的，和快死的。',
     mechanic: '毒袖与疫潮持续叠毒，荆棘守住慢战。潮汐挂坠每回合有概率提供回响，回合结束时预知 1 张牌。',
     relic: 'relic_tide_locket',
@@ -34,6 +36,7 @@ export const CHARACTERS = [
   {
     id: 'ch_gambler', name: '赌徒', title: '把命押在下一张牌上',
     glyph: '🂡', color: '#e5a50a', hp: 62, gold: 125,
+    portrait: '/assets/characters/ch_gambler.jpg',
     lore: '「牌不会骗人。发牌的人才会。」',
     mechanic: '铜钥在回合结束时洗回弃牌，每回合补充抽牌。鱼叉索与账簿找牌，乱掷把风险分给敌人。',
     relic: 'relic_copper_key',
@@ -49,6 +52,7 @@ export const CHARACTERS = [
   {
     id: 'ch_warden', name: '铁壁', title: '守过三座已经塌掉的门',
     glyph: '🛡', color: '#4dabf7', hp: 78, gold: 95,
+    portrait: '/assets/characters/ch_warden.jpg',
     lore: '他数得清自己身上每一道疤，也数得清别人欠他的。',
     mechanic: '灰烬护符增强格挡并反击随机敌人。架势、冲压与甲胄积累防线，荆棘惩罚穿透格挡的攻击。',
     relic: 'relic_ash_charm',
@@ -64,6 +68,7 @@ export const CHARACTERS = [
   {
     id: 'ch_echoer', name: '回响者', title: '她听得见牌还没打出来时的声音',
     glyph: '◎', color: '#9775fa', hp: 64, gold: 105,
+    portrait: '/assets/characters/ch_echoer.jpg',
     lore: '「这张牌会杀死它。」——她说的通常不是这张牌。',
     mechanic: '静电诵唱提供回响，让多段攻击再响一次。账簿与鱼叉索找齐组合，盐账本为远征积累金币。',
     relic: 'relic_salt_ledger',
@@ -79,7 +84,7 @@ export const CHARACTERS = [
   {
     id: 'ch_riveter', name: '铆工', title: '把最后一道门重新铆牢的人',
     glyph: '铆', color: '#45b5a4', hp: 74, gold: 90,
-    portrait: '/assets/characters/riveter.svg',
+    portrait: '/assets/characters/ch_riveter.jpg',
     lore: '城门倒下时，别人往外跑。他回头去找散落的铆钉。',
     mechanic: '开战获得 1 层碎裂，首回合获得 4 点格挡。壁垒保留格挡，盾板把防线变成伤害。',
     relic: 'relic_rivet_core', rewardTags: ['铆钉'],
