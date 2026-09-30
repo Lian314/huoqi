@@ -1,5 +1,5 @@
 // 卡池聚合入口 —— 引擎只从这里取卡
-// 四个主题组 + 进阶补充组。
+// 四个主题组 + 进阶补充组 + 深层流派。
 // id 冲突时：优先保留 effects 非空的定义（空效果 = 空壳卡，无任何实装价值），
 // 仍然相同则保留先出现的一组，并记录冲突供排查。
 import { CARDS_CORE } from './cards.core.js';
@@ -7,6 +7,7 @@ import { CARDS_FIRE } from './cards.fire.js';
 import { CARDS_FROST } from './cards.frost.js';
 import { CARDS_ARCANE } from './cards.arcane.js';
 import { CARDS_B } from './cards.ext.js';
+import { CARDS_DEPTHS } from './cards.depths.js';
 
 const GROUPS = [
   ['core', CARDS_CORE],
@@ -14,6 +15,7 @@ const GROUPS = [
   ['frost', CARDS_FROST],
   ['arcane', CARDS_ARCANE],
   ['ext', CARDS_B],
+  ['depths', CARDS_DEPTHS],
 ];
 
 const hasEffects = (c) => Array.isArray(c.effects) && c.effects.length > 0;

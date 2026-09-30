@@ -6,11 +6,17 @@ import { normStacks } from '../data/statuses.js';
 // ---------- 基础工具 ----------
 
 export function logLine(battle, text, kind = 'info') {
+  if (!battle) return;
+  battle.log ||= [];
   battle.log.push({ text, kind, turn: battle.turn });
   if (battle.log.length > 220) battle.log.shift();
 }
 
-export function fx(battle, type, data) { battle.fx.push({ type, ...data }); }
+export function fx(battle, type, data) {
+  if (!battle) return;
+  battle.fx ||= [];
+  battle.fx.push({ type, ...data });
+}
 
 /**
  * 诅咒牌入场结算。
@@ -135,15 +141,17 @@ export function clearStatuses(who, ids) {
 export function calcAttackDamage(ctx, attacker, defender, base, raw = false) {
   let d = raw ? base : base + (attacker.status.strength || 0);
   if (attacker.status.weak && !raw) d = Math.floor(d * 0.75);
-  if (ctx.battle?.doubleNextAttack?.uid === attacker.uid && !ctx.battle.doubleNextAttack.consumed) {
+  const double = ctx.preview ? ctx.preview.doubleNextAttack : ctx.battle?.doubleNextAttack;
+  const isCardAttack = ctx.card && (ctx.cardType || cardDef(ctx.card.id)?.type) === 'attack'
+    && (ctx.source === 'card' || ctx.source === 'echo');
+  const doubleAttack = ctx.doubleAttack ?? (double?.uid === attacker.uid && !double.consumed);
+  if (isCardAttack && doubleAttack) {
     d *= 2;
-    ctx.battle.doubleNextAttack.consumed = true;   // 本次攻击已消费，playCard 末尾再清空
+    if (double) double.consumed = true;
   }
-  if (!raw) {
-    d += relicMod(ctx.run, 'damagePlus');
-    if (attacker.isPlayer && ctx.battle?.eliteFight) d += relicMod(ctx.run, 'eliteDamagePlus');
-  } else {
-    d += relicMod(ctx.run, 'damagePlus');
+  if (attacker.isPlayer) {
+    d += relicMod(ctx.run, 'damagePlus') + (ctx.run?.bonusDamage || 0);
+    if (!raw && ctx.battle?.eliteFight) d += relicMod(ctx.run, 'eliteDamagePlus');
   }
   // 防御方修正
   if (defender) {
@@ -158,6 +166,19 @@ export function calcAttackDamage(ctx, attacker, defender, base, raw = false) {
 /** 实际造成伤害（含格挡、荆棘、坚毅） */
 export function dealDamage(ctx, attacker, defender, amount, opts = {}) {
   if (!defender || defender.hp <= 0 || amount <= 0) return { blocked: 0, hpLost: 0, dead: false };
+  const battle = ctx.battle;
+  const ward = defender.isPlayer && attacker && !attacker.isPlayer && opts.attack === true
+    && battle.turn === 1 && battle.bossWardReady;
+  if (ward) battle.bossWardReady = false;
+  if (ctx.preview) {
+    ctx.preview.hits.push({ uid: defender.uid, amount: ward ? 0 : amount });
+    return { blocked: 0, hpLost: 0, dead: false };
+  }
+  if (ward) {
+    logLine(battle, '【首领护符】抵消了这次攻击。', 'defend');
+    fx(battle, 'damage', { uid: defender.uid, amount: 0, blocked: 0, hpLost: 0, lethal: false });
+    return { blocked: 0, hpLost: 0, dead: false };
+  }
   let dmg = amount;
   let blocked = 0;
   if (!opts.pierce) {
@@ -188,37 +209,52 @@ export function dealDamage(ctx, attacker, defender, amount, opts = {}) {
   }
   if (defender.hp <= 0) defender.hp = 0;
   fx(ctx.battle, 'damage', { uid: defender.uid, amount, blocked, hpLost, lethal: defender.hp <= 0 });
-  if (ctx.run) {
-    if (hpLost > 0) relicHook(ctx, 'onHpLost', { target: defender, amount: hpLost, ctx });
-    relicHook(ctx, 'onDamageDealt', { source: attacker, target: defender, amount: hpLost, ctx });
+  const source = attacker || ctx.self;
+  if (ctx.run?.stats && hpLost > 0) {
+    const stats = ctx.run.stats;
+    if (defender.isPlayer) stats.damageTaken = (stats.damageTaken || 0) + hpLost;
+    else if (source?.isPlayer) stats.damageDealt = (stats.damageDealt || 0) + hpLost;
+  }
+  if (hpLost > 0) {
+    if (defender.isPlayer) relicHook(ctx, 'onHpLost', { target: defender, amount: hpLost });
+    if (source?.isPlayer && !defender.isPlayer) {
+      relicHook(ctx, 'onDamageDealt', { source, target: defender, amount: hpLost });
+    }
   }
 
   // 荆棘
   if (!opts.noThorns && attacker && attacker !== defender && defender.status.thorns > 0 && hpLost > 0) {
-    const t = dealDamage(ctx, defender, attacker, defender.status.thorns, { pierce: true, noThorns: true });
+    const sub = { ...ctx, self: defender, target: attacker, source: 'thorns',
+      perspective: defender.isPlayer ? 'player' : 'enemy' };
+    const t = dealDamage(sub, defender, attacker, defender.status.thorns, { pierce: true, noThorns: true });
     logLine(ctx.battle, `【荆棘】反弹 ${t.hpLost} 点伤害给 ${attacker.name}。`, 'counter');
   }
 
-  if (defender.hp <= 0) { logLine(ctx.battle, `${defender.name} 被击倒。`, 'kill'); return { blocked, hpLost, dead: true }; }
+  if (defender.hp <= 0) {
+    logLine(ctx.battle, `${defender.name} 被击倒。`, 'kill');
+    if (defender.isPlayer) checkPlayerDeath(ctx);
+    else onEnemyDeath({ ...ctx, self: source }, defender);
+    return { blocked, hpLost, dead: true };
+  }
   return { blocked, hpLost, dead: false };
 }
 
 export function gainBlock(ctx, who, base) {
   if (!who || who.hp <= 0) return 0;
   if (who.status.bind) base = Math.max(0, base - who.status.bind);
-  let b = base + (who.status.dexterity || 0);
+  let b = base + (who.status.dexterity || 0) + (who.isPlayer ? relicMod(ctx.run, 'blockPlus') : 0);
   if (who.status.frail) b = Math.floor(b * 0.75);
   if (who.status.hollow) b = Math.min(b, 1);
   b = Math.max(0, Math.floor(b));
   who.block += b;
   fx(ctx.battle, 'block', { uid: who.uid, amount: b });
-  if (ctx.run) relicHook(ctx, 'onBlock', { target: who, amount: b, ctx });
+  if (who.isPlayer && b > 0) relicHook(ctx, 'onBlock', { target: who, amount: b });
   return b;
 }
 
 export function heal(ctx, who, n) {
-  if (!who || n <= 0) return 0;
-  n += relicMod(ctx.run, 'healPlus');
+  if (!who || who.hp <= 0 || who.dead || n <= 0) return 0;
+  if (who.isPlayer) n += relicMod(ctx.run, 'healPlus');
   const before = who.hp;
   who.hp = Math.min(who.maxHp, who.hp + n);
   const gained = who.hp - before;
@@ -245,11 +281,11 @@ function resolveTargets(ctx, t) {
       case 'target': default: return [self];
     }
   }
-  if (ctx.perspective === 'enemy') {
+  if (ctx.perspective === 'enemy' || ctx.perspective === 'enemy-death') {
     const foe = battle.player;
     switch (t) {
       case 'self': return [self];
-      case 'all': return foe && foe.hp > 0 ? [self, foe] : [self];
+      case 'all': return ctx.perspective === 'enemy-death' ? livingEnemies(battle) : (foe?.hp > 0 ? [foe] : []);
       case 'allEnemies': return foe && foe.hp > 0 ? [foe] : [];
       case 'random': return foe && foe.hp > 0 ? [foe] : [];
       case 'target': default: return foe && foe.hp > 0 ? [foe] : [];
@@ -307,15 +343,27 @@ export function deckCount(ctx, key) {
 /** 触发遗物钩子；返回是否有任何钩子被触发 */
 export function relicHook(ctx, hookName, payload = {}) {
   const run = ctx.run;
-  if (!run?.relics) return false;
+  if (!run?.relics || ctx.preview) return false;
+  const player = ctx.battle?.player || ctx.self;
+  if (!player || player.hp <= 0 || player.dead) return false;
+  if (hookName === 'onHpLost' && !payload.target?.isPlayer) return false;
+  if (hookName === 'onDamageDealt' && (!payload.source?.isPlayer || payload.target?.isPlayer)) return false;
+  if (hookName === 'onBlock' && !payload.target?.isPlayer) return false;
+  const owner = ctx.battle || ctx;
+  const active = owner.activeRelicHooks ||= new Set();
   let fired = false;
   for (const rid of run.relics) {
     const def = run.relicDefs?.get?.(rid);
     const ops = def?.hooks?.[hookName];
     if (!ops || !ops.length) continue;
+    const key = `${rid}:${hookName}`;
+    if (active.has(key)) continue;
     fired = true;
-    const sub = { ...ctx, hook: hookName, self: payload.self || payload.target || ctx.self, target: payload.target || ctx.target };
+    const sub = { ...ctx, hook: hookName, source: 'relic', perspective: 'player',
+      self: player, target: payload.target ?? ctx.target, doubleAttack: false };
+    active.add(key);
     try { resolveOps(ops, sub); } catch (e) { console.error(`[relic:${rid}:${hookName}]`, e); }
+    finally { active.delete(key); }
   }
   return fired;
 }
@@ -341,13 +389,13 @@ const CUSTOM = {
     logLine(ctx.battle, '下一张攻击牌伤害翻倍。', 'good');
   },
   healPerHandCard(ctx, o = {}) {
-    const n = resolveValue(o.n ?? 1, ctx) * ctx.battle.hand.length;
+    const n = resolveValue(o.n ?? 1, ctx) * resolveValue('hand', ctx);
     heal(ctx, ctx.self, n);
   },
   burnPerCardInHand(ctx) {
-    const list = livingEnemies(ctx.battle);
-    if (!list.length) return;
-    for (let i = 0; i < ctx.battle.hand.length; i++) {
+    for (let i = 0; i < resolveValue('hand', ctx); i++) {
+      const list = livingEnemies(ctx.battle);
+      if (!list.length) break;
       const t = ctx.rng.pick(list);
       dealDamage(ctx, ctx.self, t, 2);
     }
@@ -358,7 +406,18 @@ const CUSTOM = {
     drawCards(ctx, 2);
   },
   grantRandomRelic(ctx) {
-    if (ctx.onGrantRelic) ctx.onGrantRelic();
+    if (!ctx.onGrantRelic) return;
+    const { run, battle } = ctx;
+    const hpBefore = run?.hp;
+    const maxHpBefore = run?.maxHp;
+    ctx.onGrantRelic();
+    const player = battle?.player || ctx.self;
+    if (!run || !player || player === run) return;
+    // run.hp can lag earlier effects; transfer only the grant's HP deltas.
+    player.maxHp = Math.max(1, player.maxHp + run.maxHp - maxHpBefore);
+    if (player.hp > 0 && !player.dead) {
+      player.hp = Math.max(0, Math.min(player.maxHp, player.hp + run.hp - hpBefore));
+    }
   },
   convertDeckToBurn(ctx, o = {}) {
     const p = o.p ?? 0.5;
@@ -372,11 +431,15 @@ const CUSTOM = {
 
 // ---------- 牌堆操作 ----------
 
+function handLimit(ctx) {
+  return 10 + relicMod(ctx.run, 'handPlus') + (ctx.battle.player?.status?.overload || 0);
+}
+
 export function drawCards(ctx, n) {
   const { battle, rng } = ctx;
   let drawn = 0;
-  const cap = 10 + (ctx.self?.status?.overload || 0);
-  const ent = ctx.self?.status?.entangled || 0;
+  const cap = handLimit(ctx);
+  const ent = battle.player?.status?.entangled || 0;
   if (ent > 0) {
     const lost = Math.min(n, ent);
     n -= lost;
@@ -424,17 +487,15 @@ function execOp(op, ctx) {
       for (const t of targets) {
         if (t.hp <= 0) continue;
         const dmg = calcAttackDamage(ctx, self, t, base, op.raw === true);
-        const r = dealDamage(ctx, self, t, dmg);
-        if (r.dead) onEnemyDeath(ctx, t);
+        dealDamage(ctx, self, t, dmg, { attack: true });
       }
       break;
     }
     case 'damageAll': {
       const base = resolveValue(op.v ?? 0, ctx);
-      for (const t of livingEnemies(battle)) {
+      for (const t of resolveTargets(ctx, 'allEnemies')) {
         const dmg = calcAttackDamage(ctx, self, t, base, op.raw === true);
-        const r = dealDamage(ctx, self, t, dmg);
-        if (r.dead) onEnemyDeath(ctx, t);
+        dealDamage(ctx, self, t, dmg, { attack: true });
       }
       break;
     }
@@ -455,13 +516,12 @@ function execOp(op, ctx) {
       const n = resolveValue(op.n ?? 0, ctx);
       const r = dealDamage(ctx, null, self, n, { pierce: true, noThorns: true });
       logLine(battle, `${self.name} 失去 ${r.hpLost} 点生命。`, 'bad');
-      if (r.dead) checkPlayerDeath(ctx);
       break;
     }
     case 'maxHp': {
       const n = resolveValue(op.n ?? 0, ctx);
       self.maxHp = Math.max(1, self.maxHp + n);
-      self.hp = Math.max(0, Math.min(self.maxHp, self.hp + n));
+      if (self.hp > 0 && !self.dead) self.hp = Math.max(0, Math.min(self.maxHp, self.hp + n));
       if (run && self.isPlayer) run.maxHp = Math.max(1, run.maxHp + n);
       logLine(battle, `最大生命 ${n >= 0 ? '+' : ''}${n}。`, n >= 0 ? 'good' : 'bad');
       fx(battle, 'maxhp', { uid: self.uid, delta: n });
@@ -483,7 +543,10 @@ function execOp(op, ctx) {
       if (!cardDef(id)) { console.warn('[effect] 未知卡牌', id); break; }
       for (let i = 0; i < n; i++) {
         const inst = { id, uid: `${id}#${battle.uidSeq++}`, upgraded: false };
-        if (op.op === 'addHand') battle.hand.push(inst);
+        if (op.op === 'addHand') {
+          if (battle.hand.length < handLimit(ctx)) battle.hand.push(inst);
+          else battle.discard.push(inst);
+        }
         else if (op.op === 'addDiscard') battle.discard.push(inst);
         else battle.draw.splice(rng.int(0, battle.draw.length), 0, inst);
         triggerCurse(ctx, id);
@@ -495,6 +558,7 @@ function execOp(op, ctx) {
       if (!run) break;
       if (op.card && !cardDef(op.card)) { console.warn('[effect] addDeck 未知卡牌', op.card); break; }
       run.deck.push({ id: op.card, uid: `deck#${run.deckSeq++}`, upgraded: false });
+      if (run.stats) run.stats.cardsAdded = (run.stats.cardsAdded || 0) + 1;
       if (op.card) {
         if (op.card) logLine(battle, `【${cardDef(op.card)?.name}】永久加入牌组。`, 'good');
         triggerCurse(ctx, op.card);
@@ -507,13 +571,14 @@ function execOp(op, ctx) {
       if (!run?.deck?.length) break;
       const i = rng.int(0, run.deck.length - 1);
       const removed = run.deck.splice(i, 1)[0];
+      if (run.stats) run.stats.cardsRemoved = (run.stats.cardsRemoved || 0) + 1;
       logLine(battle, `【${cardDef(removed.id)?.name}】已从牌组中永久移除。`, 'good');
       fx(battle, 'card-removed', { cardId: removed.id });
       break;
     }
     case 'upgradeCard': {
       const n = resolveValue(op.n ?? 1, ctx);
-      const cands = run?.deck?.filter((c) => !c.upgraded) || [];
+      const cands = run?.deck?.filter((c) => !c.upgraded && cardDef(c.id)?.upgrade) || [];
       for (const c of rng.sample(cands, n)) {
         c.upgraded = true;
         logLine(battle, `【${cardDef(c.id)?.name}】已升级。`, 'good');
@@ -556,29 +621,26 @@ function execOp(op, ctx) {
 
 export function onEnemyDeath(ctx, enemyC) {
   const { battle, self } = ctx;
-  if (enemyC.dead) return;
+  if (!enemyC || enemyC.hp > 0 || enemyC.isPlayer || enemyC.dead || ctx.preview) return;
   enemyC.dead = true;
   fx(battle, 'enemy-death', { uid: enemyC.uid });
   // 敌人 onDeath（作用于存活同伴）
   const def = enemyC.def;
   if (def?.onDeath?.length) {
-    const sub = { ...ctx, self: enemyC, target: null };
+    const sub = { ...ctx, self: enemyC, target: null, source: 'enemy-death',
+      perspective: 'enemy-death', card: null, doubleAttack: false };
     resolveOps(def.onDeath, sub);
   }
-  if (self.isPlayer) {
+  if (self?.isPlayer) {
     ctx.run?.onEnemyKill?.(enemyC);
     if (ctx.run) relicHook(ctx, 'onKill', { target: enemyC, ctx });
-  }
-  if (!livingEnemies(battle).length) {
-    battle.phase = 'won';
-    logLine(battle, '战斗胜利。', 'win');
   }
 }
 
 export function checkPlayerDeath(ctx) {
-  const { battle, self } = ctx;
-  if (self.hp <= 0) {
-    battle.phase = 'lost';
-    logLine(battle, '你倒下了。', 'lose');
-  }
+  const player = ctx.battle?.player;
+  if (!player || player.hp > 0 || ctx.preview) return false;
+  player.hp = 0;
+  player.dead = true;
+  return true;
 }

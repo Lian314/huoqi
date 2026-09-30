@@ -16,7 +16,7 @@ export const FACILITIES = [
   },
   {
     id: 'rooms', name: '客房', glyph: '🛏️', max: 2, cost: [110, 240], income: [0, 5],
-    desc: '每晚收入 +{income}；每次远征开始与击败精英后回复生命。', effects: { restHeal: true },
+    desc: '每晚收入 +{income}；击败精英与进入下一幕时回复 25% 最大生命。', effects: { restHeal: true },
   },
   {
     id: 'intel', name: '情报网', glyph: '🕸️', max: 2, cost: [140, 280], income: [0, 7],
@@ -51,6 +51,23 @@ export const FACILITIES = [
   {
     id: 'lighthouse', name: '灯塔', glyph: '🗼', max: 2, cost: [230, 430], income: [0, 13],
     desc: '每晚收入 +{income}；每晚潮汐伤害 -{lv}。', effects: { tideWard: 1 },
+  },
+  {
+    id: 'potion_still', name: '药水增效台', glyph: '⚗️', max: 2, cost: [130, 230], income: [2, 7],
+    desc: '每晚收入 +{income}；药水效果的正数数值 +{lv}。', effects: { potionPower: 1 },
+  },
+  {
+    id: 'commission_house', name: '委托所', glyph: '📋', max: 2, cost: [90, 180], income: [2, 6],
+    desc: '每晚收入 +{income}；委托候选 +{lv}，完成委托的金币报酬 +{commissionGold}。',
+    effects: { commissionChoices: 1, commissionGoldPlus: 10 },
+  },
+  {
+    id: 'training_yard', name: '演武场', glyph: '🎯', max: 2, cost: [120, 220], income: [0, 4],
+    desc: '每晚收入 +{income}；每场战斗首回合多抽 {lv} 张牌。', effects: { firstTurnDrawPlus: 1 },
+  },
+  {
+    id: 'supply_depot', name: '补给库', glyph: '📦', max: 2, cost: [110, 200], income: [2, 5],
+    desc: '每晚收入 +{income}；远征起始额外携带 {lv} 瓶随机药水，受药水栏位上限限制。', effects: { startPotions: 1 },
   },
 ];
 
@@ -103,6 +120,30 @@ export const STAFF = [
     mods: { incomeFlat: 0, startCards: 1, relicFind: 0.15 },
     desc: '远征起始牌组 +1 张随机卡；遗物出现几率 +15%。',
   },
+  {
+    id: 's_distiller', name: '松釜', title: '蒸馏师', glyph: '🧑‍🔬', cost: 170, wage: 12,
+    lore: '他把每一滴酒分成三层，最底下那层只给要远行的人。',
+    mods: { incomeFlat: 4, potionPower: 1 },
+    desc: '每晚收入 +4；药水效果的正数数值 +1。',
+  },
+  {
+    id: 's_quartermaster', name: '乌簿', title: '补给官', glyph: '🧑‍💼', cost: 110, wage: 8,
+    lore: '账本上没有欠条，只有下一趟出门前要补齐的东西。',
+    mods: { incomeFlat: 8, startPotions: 1 },
+    desc: '每晚收入 +8；每次远征起始额外携带 1 瓶随机药水，受栏位上限限制。',
+  },
+  {
+    id: 's_drillmaster', name: '钢靴', title: '教头', glyph: '🧑‍✈️', cost: 160, wage: 12,
+    lore: '她只练第一步。第一步站稳的人，往往还能迈出第二步。',
+    mods: { incomeFlat: 0, firstTurnDrawPlus: 1 },
+    desc: '每场战斗首回合多抽 1 张牌。',
+  },
+  {
+    id: 's_sentinel', name: '雾哨', title: '港卫', glyph: '🧑‍🚒', cost: 150, wage: 10,
+    lore: '他巡一趟码头，回来总会让每个人把肩带收紧一点。',
+    mods: { incomeFlat: 2, maxHp: 6 },
+    desc: '每晚收入 +2；远征最大生命 +6。',
+  },
 ];
 
 export const UPGRADES = [
@@ -130,7 +171,7 @@ export const NIGHT_NAMES = [
   '第三夜 · 低潮',
   '第四夜 · 白骨潮',
   '第五夜 · 熔心将醒',
-  '终夜 · 无名执政官',
+  '终夜 · 零火深渊',
 ];
 
 export const TIDE_FLAVOR = [

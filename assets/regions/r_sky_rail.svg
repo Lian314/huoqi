@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="浮空轨场的悬空铁轨、吊桥与列车">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="m406 170 48-23 37 10 52-23 36 13 41-22 26 12 61-27 41 13 48-25 74 32 48-16 82 23v103H371z" fill="#344e47"/>
+  <path d="M433 89h567v17H433zM431 118h569v10H431z" fill="#a8b19b"/>
+  <path d="M461 107v48m55-48v57m57-57v73m57-73v91m57-91v100m55-100v89m57-89v95m57-95v74m56-74v72m56-72v58" stroke="#759387" stroke-width="4"/>
+  <path d="M479 38h12v182h-12zm362-3h13v185h-13z" fill="#b6b898"/>
+  <path d="m485 39 201 68 162-68m-363 11 201 67 162-67" stroke="#c9c5a3" stroke-width="3" fill="none"/>
+  <path d="M643 68h146l24 20H643z" fill="#b77869" stroke="#d9bd93" stroke-width="3"/>
+  <path d="M658 70h21v11h-21zm33 0h21v11h-21zm34 0h21v11h-21zm33 0h21v11h-21z" fill="#8cc3b0"/>
+  <path d="M662 89h26m59 0h26m-93-21V51h40v17m-21-17 12-14" stroke="#d8c992" stroke-width="4"/>
+  <path d="m426 208 57-19 34 11 33-15 59 28-15 27H400zm308 21 50-26 49 13 36-29 69 29 62-20v44H726z" fill="#729082"/>
+  <path d="M440 174h113m217 1h87m-28 42h120m-529 13h102" stroke="#b9cfbd" stroke-width="5" opacity=".55"/>
+</svg>

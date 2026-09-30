@@ -1,9 +1,10 @@
 // ============ 探索事件数据 ============
-// 纯数据：不 import、不写函数、不写逻辑，全部字面量。
+// 基础事件与区域专属事件均为字面量，入口在此聚合。
 // 严格遵守 docs/DATA_SPEC.md：所有 op 名、字段名、条件对象均取自规范。
-// 共 28 个：act 0 通用 5 个 / act 1 八个 / act 2 八个 / act 3 七个。
+import { HARBOR_EVENTS } from './events.harbor.js';
+import { DEPTH_EVENTS } from './events.depths.js';
 
-export const EVENTS = [
+const BASE_EVENTS = [
 
   // ==================== act:0 通用 ====================
 
@@ -1136,4 +1137,380 @@ export const EVENTS = [
     ],
   },
 
+  // ==================== 通用 · 路途交易 ====================
+
+  { id:'ev_road_stamp_broker', name:'旧印章中间人', glyph:'印', act:0,
+    text:'中间人把三只旧印章摆在油布上。第一只认钱，第二只认血，第三只只认已经用过的东西。他说印章都是正经货，正经到每一笔账都能追溯到死人身上。',
+    options:[
+      { label:'买一枚修订章', desc:'支付 45 金币，随机升级至多 1 张未升级的牌。', req:{gold:45},
+        result:{ text:'旧印章落在牌面上，盖住了前一个主人的名字。',
+          effects:[{op:'gold', n:-45}, {op:'upgradeCard', n:1}] } },
+      { label:'用掌心换新章', desc:'失去 8 点生命，永久增加 4 点最大生命。',
+        result:{ text:'章面留下掌纹，你的脉搏从此比印泥重了一点。',
+          effects:[{op:'loseHp', n:8}, {op:'maxHp', n:4}] } },
+      { label:'让他没收一张旧牌', desc:'随机移除牌组中的 1 张牌，获得 35 金币。', req:{deckSizeAbove:8},
+        result:{ text:'中间人不看牌面，只按纸张的厚薄给价。',
+          effects:[{op:'removeCard'}, {op:'gold', n:35}] } }
+    ]
+  },
+
+  { id:'ev_repair_crane', name:'路口修补吊机', glyph:'架', act:0,
+    text:'半截吊机卡在路口，吊钩下挂着一只会自己摆动的工具箱。箱盖写着三种计价方式，旁边没有掌柜，只有一条不停拉紧的钢索。',
+    options:[
+      { label:'投币叫醒吊机', desc:'支付 40 金币，回复 20 点生命。', req:{gold:40},
+        result:{ text:'吊钩轻轻提起你，细小的机械手从工具箱里伸出来缝好伤口。',
+          effects:[{op:'gold', n:-40}, {op:'heal', n:20}] } },
+      { label:'徒手卸下工具箱', desc:'失去 7 点生命，获得 1 瓶随机药水。',
+        result:{ text:'钢索割开了手掌，但箱里确实还有一瓶没过期的东西。',
+          effects:[{op:'loseHp', n:7}], loot:{potions:[1,1]} } },
+      { label:'让一张牌做配重', desc:'随机移除 1 张牌，随机升级至多 2 张未升级的牌。', req:{deckSizeAbove:10},
+        result:{ text:'吊机吞下配重，把剩余的牌磨出了新的边缘。',
+          effects:[{op:'removeCard'}, {op:'upgradeCard', n:2}] } }
+    ]
+  },
+
+  { id:'ev_lantern_market', name:'熄灯集市', glyph:'灯', act:0,
+    text:'集市里的提灯全部熄着，摊主却能准确说出你衣服上每一道血迹。只有钱袋打开时灯芯才亮，亮的时间足够完成一笔交易。',
+    options:[
+      { label:'买下灯下的一件货', desc:'支付 70 金币，从遗物奖励中选择 1 件。', req:{gold:70},
+        result:{ text:'钱袋一合，摊主消失了，三件货仍摆在你面前。',
+          effects:[{op:'gold', n:-70}], loot:{relics:1} } },
+      { label:'以伤口点灯', desc:'失去 10 点生命，从卡牌奖励中选择 1 张。',
+        result:{ text:'你的血让灯亮了一瞬，足够看清几张牌上的字。',
+          effects:[{op:'loseHp', n:10}], loot:{cards:1} } },
+      { label:'把旧牌交给摊主', desc:'随机移除 1 张牌，获得 45 金币。', req:{deckSizeAbove:8},
+        result:{ text:'他收牌时没有伸手，牌自己滑进了灯里的黑。',
+          effects:[{op:'removeCard'}, {op:'gold', n:45}] } }
+    ]
+  },
+
+  { id:'ev_salt_infirmary', name:'盐袋诊所', glyph:'盐', act:0,
+    text:'诊所只有盐袋和一块干净木板。医生先看你的牌袋，再看你的伤口，最后把盐分成三份，说身体和记忆总得留下一样做诊金。',
+    options:[
+      { label:'按价付诊金', desc:'支付 35 金币，回复 22 点生命。', req:{gold:35},
+        result:{ text:'盐撒下去时很疼，疼完以后，旧伤真的合拢了。',
+          effects:[{op:'gold', n:-35}, {op:'heal', n:22}] } },
+      { label:'割掉一段坏肉', desc:'永久失去 3 点最大生命，回复 28 点生命。',
+        result:{ text:'医生把坏肉封进盐袋，木板上的位置一下宽了些。',
+          effects:[{op:'maxHp', n:-3}, {op:'heal', n:28}] } },
+      { label:'交出一段记忆', desc:'随机移除 1 张牌，回复 16 点生命。', req:{deckSizeAbove:8},
+        result:{ text:'你忘了那张牌原本是什么，伤口却记得自己该怎样长好。',
+          effects:[{op:'removeCard'}, {op:'heal', n:16}] } }
+    ]
+  },
+
+  { id:'ev_discard_ferry', name:'弃牌渡口', glyph:'舟', act:0,
+    text:'摆渡人用牌垫着漏水的船底，每一张都还有名字。他说岸在前面，价钱在这里，并把一只装满硬币的鞋倒扣在船头。',
+    options:[
+      { label:'付钱修一张船票', desc:'支付 50 金币，随机移除 1 张牌。', req:{gold:50,deckSizeAbove:8},
+        result:{ text:'船票盖好以后，摆渡人把你牌袋里的一张牌也压进了船底。',
+          effects:[{op:'gold', n:-50}, {op:'removeCard'}] } },
+      { label:'自己跳下去捞钱', desc:'先失去 5 点生命；65% 获得 90 金币，35% 再失去 7 点生命并获得 20 金币。',
+        result:{ text:'鞋底下面还有一层水，水下面的钱却不肯都浮起来。',
+          effects:[{op:'loseHp', n:5}, {op:'if', cond:{type:'chance',p:0.65},
+            then:[{op:'gold',n:90}], else:[{op:'loseHp',n:7},{op:'gold',n:20}]}] } },
+      { label:'留下两张垫船的牌', desc:'随机移除 2 张牌，获得 30 金币。', req:{deckSizeAbove:12},
+        result:{ text:'船不再漏水，摆渡人从鞋里数出了刚好的零钱。',
+          effects:[{op:'removeCard'}, {op:'removeCard'}, {op:'gold', n:30}] } }
+    ]
+  },
+
+  { id:'ev_sealed_paybox', name:'封住的薪盒', glyph:'盒', act:0,
+    text:'薪盒被三条铁带封在路边，锁孔里压着一张过期工牌。盒盖说里面的钱已经分过一次，想再分的人必须补上上一任的欠账。',
+    options:[
+      { label:'买一把工牌钥匙', desc:'支付 20 金币，获得 45~65 金币。', req:{gold:20},
+        result:{ text:'钥匙只打开最上面的一层，里面的钱不多，但每一枚都是完整的。',
+          effects:[{op:'gold', n:-20}], loot:{gold:[45,65]} } },
+      { label:'用手撬开铁带', desc:'失去 10 点生命，获得 85 金币。',
+        result:{ text:'铁带割破了手指，盒子终于认出了另一个工人的手。',
+          effects:[{op:'loseHp', n:10}, {op:'gold', n:85}] } },
+      { label:'交出一张牌补欠账', desc:'随机移除 1 张牌，获得 60 金币。', req:{deckSizeAbove:8},
+        result:{ text:'工牌上的名字被擦掉，盒子吐出了一份重新核算的薪水。',
+          effects:[{op:'removeCard'}, {op:'gold', n:60}] } }
+    ]
+  },
+
+  // ==================== act:1 · 码头蒸汽工会 ====================
+
+  { id:'ev_guild_gate', name:'工会闸门', glyph:'闸', act:1,
+    text:'沉港闸门前的值班员一直在给同一张申请盖章。闸门没有打开，申请却越来越厚。桌角摆着一枚备用密钥，齿槽里还有未干的油。',
+    options:[
+      { label:'购买备用密钥', desc:'支付 60 金币，永久加入「闸门密钥」。', req:{gold:60},
+        result:{ text:'值班员盖完最后一个章，把备用密钥放进你的牌袋。',
+          effects:[{op:'gold', n:-60}, {op:'addDeck', card:'c_r_gate_key'}] } },
+      { label:'从转轴缝里挤过去', desc:'失去 8 点生命，永久加入「活塞突踢」，获得 20 金币。',
+        result:{ text:'转轴擦过肩膀，你记住了机器踢人的那个角度。',
+          effects:[{op:'loseHp', n:8}, {op:'addDeck',card:'c_piston_kick'}, {op:'gold',n:20}] } },
+      { label:'用一张旧牌换工牌', desc:'随机移除 1 张牌，永久加入「袖珍账簿」。', req:{deckSizeAbove:8},
+        result:{ text:'旧牌被贴进工会名册，换来的小账簿还有一页空白。',
+          effects:[{op:'removeCard'}, {op:'addDeck',card:'c_pocket_ledger'}] } }
+    ]
+  },
+
+  { id:'ev_boiler_exam', name:'背炉检验', glyph:'炉', act:1,
+    text:'检验官要求每个人先试一遍背炉。合格的人能得到新铆钉，不合格的人要留下旧零件。他的印章上没有“不合格”三个字，只有一条烧焦的边。',
+    options:[
+      { label:'支付正式检验费', desc:'支付 40 金币，随机升级至多 1 张未升级的牌。', req:{gold:40},
+        result:{ text:'炉压平稳，检验官给你的牌钉上了新的边框。',
+          effects:[{op:'gold',n:-40}, {op:'upgradeCard',n:1}] } },
+      { label:'挑战红线炉压', desc:'失去 6 点生命；60% 随机升级至多 2 张牌，40% 再失去 6 点生命并获得 25 金币。',
+        result:{ text:'压力表越过红线以后，检验官反而把笔放下了。',
+          effects:[{op:'loseHp',n:6}, {op:'if',cond:{type:'chance',p:0.6},
+            then:[{op:'upgradeCard',n:2}], else:[{op:'loseHp',n:6},{op:'gold',n:25}]}] } },
+      { label:'拆掉一件旧零件', desc:'随机移除 1 张牌，获得 30 金币。', req:{deckSizeAbove:9},
+        result:{ text:'检验官不问你拆掉了什么，只确认背炉终于不响了。',
+          effects:[{op:'removeCard'}, {op:'gold',n:30}] } }
+    ]
+  },
+
+  { id:'ev_rivet_wages', name:'铆钉工资单', glyph:'铆', act:1,
+    text:'码头的工资没有纸币，只有一箱分好重量的铆钉。出纳把空白工资单推过来，旁边放着打孔器和一只沾血的工时钟。',
+    options:[
+      { label:'预付下一个班次', desc:'支付 25 金币，永久加入「铆钉雨」，获得 15 金币。', req:{gold:25},
+        result:{ text:'出纳先扣下预付款，再把够你用一个班次的铆钉倒进牌袋。',
+          effects:[{op:'gold',n:-25}, {op:'addDeck',card:'c_f_rivet_rain'}, {op:'gold',n:15}] } },
+      { label:'加班拆卸沉船', desc:'失去 7 点生命，获得 65 金币。',
+        result:{ text:'沉船上的铁皮很锋利，工资里的硬币倒是很圆。',
+          effects:[{op:'loseHp',n:7}, {op:'gold',n:65}] } },
+      { label:'退掉一件自带工具', desc:'随机移除 1 张牌，永久加入「冷铁凿击」。', req:{deckSizeAbove:8},
+        result:{ text:'旧工具上缴以后，出纳给你一把仍带着海水的冷凿。',
+          effects:[{op:'removeCard'}, {op:'addDeck',card:'c_cold_iron'}] } }
+    ]
+  },
+
+  { id:'ev_chain_memorial', name:'缆索纪念碑', glyph:'缆', act:1,
+    text:'纪念碑是一根绷到极限的缆索。每个结都绑着一张工牌，最底下的结还空着。守碑人说新工牌要拿别的东西来压，免得海风把名字吹走。',
+    options:[
+      { label:'捐钱修缆索', desc:'支付 45 金币，永久增加 3 点最大生命。', req:{gold:45},
+        result:{ text:'新结系好以后，风从你身上绕了一圈，像重新量过尺寸。',
+          effects:[{op:'gold',n:-45}, {op:'maxHp',n:3}] } },
+      { label:'把掌纹留在缆索上', desc:'失去 8 点生命，从遗物奖励中选择 1 件。',
+        result:{ text:'掌纹被锈迹吃进去，空着的结上掉下一件旧工人的物品。',
+          effects:[{op:'loseHp',n:8}], loot:{relics:1} } },
+      { label:'烧一张牌祭奠', desc:'随机移除 1 张牌，回复 12 点生命。', req:{deckSizeAbove:8},
+        result:{ text:'纸灰落进工牌的孔里，肩上的重量轻了下来。',
+          effects:[{op:'removeCard'}, {op:'heal',n:12}] } }
+    ]
+  },
+
+  { id:'ev_dock_soup', name:'码头夜班汤', glyph:'汤', act:1,
+    text:'夜班食堂只剩一锅汤，锅底还响着碎齿轮的声音。厨师把碗分成三排，写着现钱、现工和旧料，谁也不能从两排里同时拿碗。',
+    options:[
+      { label:'买一碗现钱汤', desc:'支付 25 金币，回复 18 点生命。', req:{gold:25},
+        result:{ text:'汤里没有齿轮，只有一小块还认得出形状的肉。',
+          effects:[{op:'gold',n:-25}, {op:'heal',n:18}] } },
+      { label:'替厨师搬炉煤', desc:'失去 5 点生命，获得 1 瓶随机药水和 20 金币。',
+        result:{ text:'煤粉咬破了指缝，厨师把一瓶夜班补给和工钱塞进你手里。',
+          effects:[{op:'loseHp',n:5},{op:'gold',n:20}], loot:{potions:[1,1]} } },
+      { label:'交出一件旧料', desc:'随机移除 1 张牌，回复 10 点生命并获得 10 金币。', req:{deckSizeAbove:8},
+        result:{ text:'厨师把旧料扔进炉膛，给你舀了半碗特别浓的汤。',
+          effects:[{op:'removeCard'},{op:'heal',n:10},{op:'gold',n:10}] } }
+    ]
+  },
+
+  { id:'ev_sunk_workshop', name:'沉船工坊', glyph:'舱', act:1,
+    text:'工坊倾斜着沉在水里，锻台却仍然露在水面上。台边的老匠人有三只工具袋，一只全是银币，一只全是伤口，一只空着等你放点东西进去。',
+    options:[
+      { label:'购买蒸汽冲压图纸', desc:'支付 50 金币，永久加入「蒸汽冲压」。', req:{gold:50},
+        result:{ text:'图纸从油纸里抽出来，水珠一碰到线条就变成了蒸汽。',
+          effects:[{op:'gold',n:-50},{op:'addDeck',card:'c_steam_press'}] } },
+      { label:'探入水下工具袋', desc:'失去 7 点生命；65% 随机升级至多 2 张牌，35% 获得 20 金币。',
+        result:{ text:'水下的工具袋很深，有时摸到的是锻锤，有时只剩匠人的零钱。',
+          effects:[{op:'loseHp',n:7},{op:'if',cond:{type:'chance',p:0.65},
+            then:[{op:'upgradeCard',n:2}],else:[{op:'gold',n:20}]}] } },
+      { label:'用旧牌换一面铁盾', desc:'随机移除 1 张牌，永久加入「铁壁架势」。', req:{deckSizeAbove:8},
+        result:{ text:'老匠人把旧牌折进盾芯，说每块铁都需要一个不再讲的故事。',
+          effects:[{op:'removeCard'},{op:'addDeck',card:'c_brace'}] } }
+    ]
+  },
+
+  // ==================== act:2 · 幽灯巡逻队 ====================
+
+  { id:'ev_night_pass', name:'夜渡凭证处', glyph:'渡', act:2,
+    text:'渡口的验票灯照不到纸面，只照得到纸后面的手。柜台摆着三种凭证：给付得起钱的人，给挨得住刀的人，以及给愿意少带点东西过河的人。',
+    options:[
+      { label:'购买正式夜渡凭证', desc:'支付 75 金币，永久加入「夜渡凭证」。', req:{gold:75},
+        result:{ text:'验票灯亮了一瞬，凭证上的夜色像被整齐折过。',
+          effects:[{op:'gold',n:-75},{op:'addDeck',card:'c_l_night_pass'}] } },
+      { label:'借巡逻队的缺口走', desc:'失去 10 点生命，永久加入「硝烟壁」和「浅呼吸」。',
+        result:{ text:'你从刀锋下面钻过去，学会了在灯亮之前先收住呼吸。',
+          effects:[{op:'loseHp',n:10},{op:'addDeck',card:'c_f_smoke_veil'},
+            {op:'addDeck',card:'c_skl_shallow_breath'}] } },
+      { label:'减轻一张牌的行李', desc:'随机移除 1 张牌，获得 45 金币。', req:{deckSizeAbove:10},
+        result:{ text:'船身往上浮了一寸，验票员退还了一笔轻装旅费。',
+          effects:[{op:'removeCard'},{op:'gold',n:45}] } }
+    ]
+  },
+
+  { id:'ev_lantern_rollcall', name:'幽灯点名', glyph:'巡', act:2,
+    text:'巡逻队把灯围成一圈，一个空着的站位正对你。队长念到那里时停住，说每个名字都要先交一份保证，钱、血或者旧本事都行。',
+    options:[
+      { label:'缴纳巡夜保证金', desc:'支付 55 金币，随机升级至多 2 张未升级的牌。', req:{gold:55},
+        result:{ text:'队长不念你的名字，只把两道巡夜记号留在牌面上。',
+          effects:[{op:'gold',n:-55},{op:'upgradeCard',n:2}] } },
+      { label:'站进没有灯的那一格', desc:'失去 12 点生命，永久增加 6 点最大生命。',
+        result:{ text:'所有灯都向外转开，你的影子却比进来时站得更稳。',
+          effects:[{op:'loseHp',n:12},{op:'maxHp',n:6}] } },
+      { label:'交出一张旧本事', desc:'随机移除 1 张牌，永久加入「寒冬噤声」。', req:{deckSizeAbove:9},
+        result:{ text:'空站位收走了旧牌，队长教你怎样让一声呼吸也不漏出去。',
+          effects:[{op:'removeCard'},{op:'addDeck',card:'c_i_hush_of_winter'}] } }
+    ]
+  },
+
+  { id:'ev_fog_auction', name:'雾中拍卖', glyph:'雾', act:2,
+    text:'拍卖师藏在浓雾里，只有落槌的手伸出来。三口箱子已经开了价：第一口是真货，第二口凭运气，第三口只交换曾经用过的招式。',
+    options:[
+      { label:'买下标明真货的箱子', desc:'支付 80 金币，从遗物奖励中选择 1 件。', req:{gold:80},
+        result:{ text:'箱子的重量没有骗你，雾里的人却已经找不到了。',
+          effects:[{op:'gold',n:-80}],loot:{relics:1} } },
+      { label:'以血押一口盲箱', desc:'失去 6 点生命；55% 获得 110 金币，45% 再失去 9 点生命并获得 30 金币。',
+        result:{ text:'箱盖打开时，拍卖师先敲了一下槌，像在确认你的押金。',
+          effects:[{op:'loseHp',n:6},{op:'if',cond:{type:'chance',p:0.55},
+            then:[{op:'gold',n:110}],else:[{op:'loseHp',n:9},{op:'gold',n:30}]}] } },
+      { label:'用两张旧牌换新货', desc:'随机移除 2 张牌，从卡牌奖励中选择 1 张。', req:{deckSizeAbove:13},
+        result:{ text:'两张旧牌落进雾里，三张新牌却干燥地躺在箱底。',
+          effects:[{op:'removeCard'},{op:'removeCard'}],loot:{cards:1} } }
+    ]
+  },
+
+  { id:'ev_glass_autopsy', name:'玻璃潜盔解剖台', glyph:'盔', act:2,
+    text:'一只潜盔躺在解剖台上，玻璃里面有缓慢移动的水纹。医生把你的牌铺在台边，说肺、潜盔和牌组其实都一样，裂了就得先决定留下哪一半。',
+    options:[
+      { label:'支付潜盔修补费', desc:'支付 45 金币，回复 26 点生命。', req:{gold:45},
+        result:{ text:'玻璃的裂口被磨平，呼吸终于不再刮着胸腔走。',
+          effects:[{op:'gold',n:-45},{op:'heal',n:26}] } },
+      { label:'换掉破损肺叶', desc:'永久失去 4 点最大生命，回复 35 点生命。',
+        result:{ text:'医生把旧肺叶留在潜盔里，水纹在那里面渐渐安静了。',
+          effects:[{op:'maxHp',n:-4},{op:'heal',n:35}] } },
+      { label:'让旧牌替潜盔挡水', desc:'随机移除 1 张牌，永久加入「冻土庇护」。', req:{deckSizeAbove:9},
+        result:{ text:'纸被压进玻璃缝里，剩下的寒意被折成一张新的护身牌。',
+          effects:[{op:'removeCard'},{op:'addDeck',card:'c_i_permafrost_ward'}] } }
+    ]
+  },
+
+  { id:'ev_patrol_cache', name:'巡逻队补给龛', glyph:'龛', act:2,
+    text:'补给龛的门上有三种扣锁，金币能打开底层，鲜血能打开中层，塞进旧牌则能打开顶层。三层门互相咬合，一层开了，另外两层就会锁死。',
+    options:[
+      { label:'买下底层药水', desc:'支付 35 金币，获得 2 瓶随机药水。', req:{gold:35},
+        result:{ text:'底层推出来两瓶有巡逻队封蜡的药，另外两层同时缩回墙里。',
+          effects:[{op:'gold',n:-35}],loot:{potions:[2,2]} } },
+      { label:'割手打开中层', desc:'失去 11 点生命，从遗物奖励中选择 1 件。',
+        result:{ text:'中层的扣锁舔干净了血，里面的旧装备还保持着温度。',
+          effects:[{op:'loseHp',n:11}],loot:{relics:1} } },
+      { label:'把旧牌塞进顶层锁', desc:'随机移除 1 张牌，获得 50 金币并回复 8 点生命。', req:{deckSizeAbove:9},
+        result:{ text:'顶层吐出一只补给袋，袋口挂着已经看不清的旧巡逻编号。',
+          effects:[{op:'removeCard'},{op:'gold',n:50},{op:'heal',n:8}] } }
+    ]
+  },
+
+  { id:'ev_drowned_choir', name:'水下巡夜合唱', glyph:'歌', act:2,
+    text:'水下的巡夜队正在合唱，每个音节都吐出一颗气泡。指挥看见你，抬起三根手指，要你付一份听歌的钱，或留一点能加入合唱的东西。',
+    options:[
+      { label:'付钱听完整一段', desc:'支付 60 金币，永久加入「静电诵唱」。', req:{gold:60},
+        result:{ text:'最后一个音节浮上水面，你把它收进牌袋，指尖还有轻微的麻。',
+          effects:[{op:'gold',n:-60},{op:'addDeck',card:'c_pwr_static_choir'}] } },
+      { label:'潜下去唱自己的那句', desc:'失去 12 点生命，随机升级至多 2 张未升级的牌。',
+        result:{ text:'水压让胸口发痛，你仍把那句唱完了，牌面上的字也变得更清楚。',
+          effects:[{op:'loseHp',n:12},{op:'upgradeCard',n:2}] } },
+      { label:'用旧牌补一处空声部', desc:'随机移除 1 张牌，回复 18 点生命并获得 20 金币。', req:{deckSizeAbove:9},
+        result:{ text:'空声部终于有了声音，气泡推着你回到岸边。',
+          effects:[{op:'removeCard'},{op:'heal',n:18},{op:'gold',n:20}] } }
+    ]
+  },
+
+  // ==================== act:3 · 血契议会 ====================
+
+  { id:'ev_last_covenant', name:'最后誓约签署处', glyph:'誓', act:3,
+    text:'签署处只有一支笔，笔尖上的血始终不干。桌上三份契约不能叠在一起：一份写着财产，一份写着身体，最后一份把你的过去留成了空白。',
+    options:[
+      { label:'买下最后誓约', desc:'支付 100 金币，永久加入「最后誓约」。', req:{gold:100},
+        result:{ text:'代办人收走金币，把最后一份签过名的誓约折好交给你。',
+          effects:[{op:'gold',n:-100},{op:'addDeck',card:'c_o_last_covenant'}] } },
+      { label:'以血代替签名', desc:'失去 15 点生命，永久加入「血债祷文」。',
+        result:{ text:'契约吸干了笔尖以外的血，祷文却仍然温热。',
+          effects:[{op:'loseHp',n:15},{op:'addDeck',card:'c_a_blood_prayer'}] } },
+      { label:'删去过去的一条誓言', desc:'随机移除 1 张牌，永久加入「铁骨誓」。', req:{deckSizeAbove:10},
+        result:{ text:'旧誓言的空白被铁线缝住，从此只留下一句更短的承诺。',
+          effects:[{op:'removeCard'},{op:'addDeck',card:'c_a_resolve_iron'}] } }
+    ]
+  },
+
+  { id:'ev_council_quorum', name:'空席点票', glyph:'席', act:3,
+    text:'议会正在清点空椅子，计票人坚持少了一票。他把三种代理票递到你面前，每张票都已经写好赞成，差的只是由谁来承担签名。',
+    options:[
+      { label:'支付代理票费用', desc:'支付 80 金币，随机升级至多 3 张未升级的牌。', req:{gold:80},
+        result:{ text:'代理票被计入多数，三道议会印留在你随身的牌上。',
+          effects:[{op:'gold',n:-80},{op:'upgradeCard',n:3}] } },
+      { label:'用手印占一个空席', desc:'失去 14 点生命，永久增加 7 点最大生命。',
+        result:{ text:'空椅子记住了你的手印，你离席时像多带走了一截脊背。',
+          effects:[{op:'loseHp',n:14},{op:'maxHp',n:7}] } },
+      { label:'以两张旧牌投票', desc:'随机移除 2 张牌，从遗物奖励中选择 1 件。', req:{deckSizeAbove:14},
+        result:{ text:'两张牌落进票箱，空席下面打开了一格只有议员才用的抽屉。',
+          effects:[{op:'removeCard'},{op:'removeCard'}],loot:{relics:1} } }
+    ]
+  },
+
+  { id:'ev_blood_tax', name:'血税补缴窗口', glyph:'税', act:3,
+    text:'窗口后面的税吏没有手，计算器却一直响。欠税单列了三种收入：钱袋里的，血管里的，以及你打算带到下一场战斗里的。',
+    options:[
+      { label:'按现钱补缴', desc:'支付 65 金币，回复 32 点生命。', req:{gold:65},
+        result:{ text:'税吏冲销了最近一笔血税，你胸口的伤不再继续渗血。',
+          effects:[{op:'gold',n:-65},{op:'heal',n:32}] } },
+      { label:'提前交出下一笔血税', desc:'失去 13 点生命，获得 130 金币。',
+        result:{ text:'计算器把血滴算成硬币，钱落下来时发出很轻的声响。',
+          effects:[{op:'loseHp',n:13},{op:'gold',n:130}] } },
+      { label:'注销一件随身资产', desc:'随机移除 1 张牌，获得 70 金币并回复 8 点生命。', req:{deckSizeAbove:10},
+        result:{ text:'资产栏被抹去了一项，税吏退回一笔迟来的赔偿。',
+          effects:[{op:'removeCard'},{op:'gold',n:70},{op:'heal',n:8}] } }
+    ]
+  },
+
+  { id:'ev_red_archive', name:'赤议院废案库', glyph:'卷', act:3,
+    text:'废案库里的卷宗仍在发热，每卷上都写着同一句“暂缓执行”。管理员说暂缓从来不等于结束，并把钱柜、烧红的抽屉和碎纸槽同时打开。',
+    options:[
+      { label:'买一份完整废案', desc:'支付 90 金币，从卡牌奖励中选择 1 张。', req:{gold:90},
+        result:{ text:'完整废案比想象中轻，纸里却夹着几条还没执行的命令。',
+          effects:[{op:'gold',n:-90}],loot:{cards:1} } },
+      { label:'徒手抽出发热卷宗', desc:'失去 16 点生命，从遗物奖励中选择 1 件。',
+        result:{ text:'卷宗烫穿了手套，里面那件证物仍在等待最后一次传递。',
+          effects:[{op:'loseHp',n:16}],loot:{relics:1} } },
+      { label:'把旧牌送进碎纸槽', desc:'随机移除 1 张牌，随机升级至多 2 张未升级的牌。', req:{deckSizeAbove:11},
+        result:{ text:'碎纸槽收走旧条款，管理员给余下的条款盖了重新执行的章。',
+          effects:[{op:'removeCard'},{op:'upgradeCard',n:2}] } }
+    ]
+  },
+
+  { id:'ev_final_seal', name:'终审封匣', glyph:'封', act:3,
+    text:'终审封匣已经上锁，匣盖却还在轻轻起伏。封印保管人摆出三把钥匙，说一把付现钱，一把借未来，一把拿旧招式做齿。',
+    options:[
+      { label:'购买现钱钥匙', desc:'支付 90 金币，永久加入「圣物匣」。', req:{gold:90},
+        result:{ text:'封匣不再起伏，它把最后一格可以随身携带的空间交给了你。',
+          effects:[{op:'gold',n:-90},{op:'addDeck',card:'c_a_reliquary'}] } },
+      { label:'抵押一段未来', desc:'永久失去 5 点最大生命，获得 120 金币。',
+        result:{ text:'借条被压在匣底，那段被抵押的未来没有发出声音。',
+          effects:[{op:'maxHp',n:-5},{op:'gold',n:120}] } },
+      { label:'磨掉两张旧牌的齿', desc:'随机移除 2 张牌，随机升级至多 3 张未升级的牌。', req:{deckSizeAbove:14},
+        result:{ text:'新钥匙只转动一次，余下的牌全都多出了一道终审印。',
+          effects:[{op:'removeCard'},{op:'removeCard'},{op:'upgradeCard',n:3}] } }
+    ]
+  },
+
+  { id:'ev_ash_amnesty', name:'灰烬赦免令', glyph:'赦', act:3,
+    text:'赦免令被钉在炉门上，每一行字都快要烧到。司炉官给出最后三种结算办法，选完一种，剩下两行就会一起落进炉子。',
+    options:[
+      { label:'交钱取走自己的那一行', desc:'支付 70 金币，回复 40 点生命。', req:{gold:70},
+        result:{ text:'赦免令的一行被完整撕下来，身上最深的那道伤也终于停止作痛。',
+          effects:[{op:'gold',n:-70},{op:'heal',n:40}] } },
+      { label:'踏过烧红的门槛', desc:'先失去 8 点生命；60% 永久增加 6 点最大生命，40% 再失去 8 点生命并获得 60 金币。',
+        result:{ text:'门槛烫得看不出原来的字，跨过去以后，总得带走一样结算过的东西。',
+          effects:[{op:'loseHp',n:8},{op:'if',cond:{type:'chance',p:0.6},
+            then:[{op:'maxHp',n:6}],else:[{op:'loseHp',n:8},{op:'gold',n:60}]}] } },
+      { label:'让一张旧牌留在炉门上', desc:'随机移除 1 张牌，永久加入「灰烬摇篮曲」，获得 30 金币。', req:{deckSizeAbove:10},
+        result:{ text:'旧牌遮住了最后一行，炉火安静下来，你听见一小段可以记住的歌。',
+          effects:[{op:'removeCard'},{op:'addDeck',card:'c_f_coalsong'},{op:'gold',n:30}] } }
+    ]
+  },
+
 ];
+
+export const EVENTS = [...BASE_EVENTS, ...HARBOR_EVENTS, ...DEPTH_EVENTS];

@@ -314,6 +314,8 @@ button:disabled { cursor: not-allowed; }
   position: absolute; bottom: 6px; right: 7px; font-size: 9px; padding: 1px 5px; border-radius: 4px;
   background: rgba(229,165,10,.2); border: 1px solid rgba(229,165,10,.5); color: var(--sulfur);
 }
+.card-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; min-height: 16px; flex: 0 0 auto; }
+.card-footer .card-badge { position: static; }
 .card.upgraded { border-color: rgba(229,165,10,.55); box-shadow: 0 6px 18px rgba(0,0,0,.5), 0 0 14px rgba(229,165,10,.2); }
 
 .card-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
@@ -659,6 +661,26 @@ button:disabled { cursor: not-allowed; }
 @keyframes slashFx { 0% { transform: translate(-50%,-50%) scale(.3); opacity: 1; } 100% { transform: translate(-50%,-50%) scale(1.8); opacity: 0; } }
 
 /* ---------------- 响应式 ---------------- */
+.commission-home-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line-2); margin-bottom: 18px; }
+.commission-hud { font-size: 12px; color: var(--teal); }
+.commission-ledger { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; padding: 0 0 20px; border-bottom: 1px solid var(--line-2); }
+.commission-last { padding: 14px 0; font-size: 13px; }
+.commission-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 265px), 1fr)); gap: 14px; margin-top: 18px; }
+.commission-offer { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 18px; border: 1px solid var(--line-2); border-radius: 8px; background: rgba(12,18,20,.7); }
+.commission-offer.selected { border-color: var(--teal); }
+.commission-patron { color: var(--teal); font-size: 12px; }
+.commission-offer h3, .commission-report h3 { margin: 0; font-size: 18px; letter-spacing: 0; }
+.commission-offer p { margin: 0; line-height: 1.8; }
+.commission-goals { padding-left: 20px; margin: 8px 0; font-size: 13px; }
+.commission-payout { color: var(--gold); font-size: 13px; margin-top: auto; padding-top: 8px; }
+.commission-offer .btn { align-self: flex-start; margin-top: 8px; min-height: 34px; }
+.commission-report { padding: 20px 0; border-top: 1px solid var(--line-2); }
+.traveler-art { height: 90px; display: grid; place-items: center; }
+.traveler-portrait { width: 80px; height: 80px; object-fit: contain; border-radius: 6px; }
+.traveler-art.large { height: 132px; }
+.traveler-art.large .traveler-portrait { width: 128px; height: 128px; }
+.card-portrait { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
+
 @media (max-width: 860px) {
   .card { width: 124px; min-height: 178px; }
   .hand { padding: 0 8px; }
@@ -676,7 +698,12 @@ button:disabled { cursor: not-allowed; }
   .card { width: 104px; min-height: 152px; padding: 7px; }
   .card-art { height: 38px; font-size: 19px; }
   .card-text { font-size: 10px; }
+  .battle { overflow-y: auto; overflow-x: hidden; }
+  .battle-arena { flex: 1 0 auto; min-height: 390px; padding-bottom: 220px; }
+  .hand-zone { height: auto; min-height: 340px; flex-direction: column; align-items: stretch; gap: 8px; padding: 0 8px 10px; }
+  .hand { height: auto; min-height: 280px; flex: 0 0 auto; padding: 0; }
   .hand .card { margin: 0 -40px; }
+  .endturn-wrap { position: static; flex-direction: row; justify-content: flex-end; align-items: center; flex: 0 0 auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

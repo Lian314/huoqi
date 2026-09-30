@@ -4,7 +4,7 @@ import { MAX_NIGHT, isFinalNight, nightName } from '../../systems/meta.js';
 
 export function renderSummary({ app, root, params }) {
   const meta = app.meta;
-  const r = params.result;
+  const r = params.result || meta.pendingResult;
 
   root.append(app.hud());
   const scroll = el('div', { class: 'scroll' });
@@ -12,7 +12,7 @@ export function renderSummary({ app, root, params }) {
   scroll.append(wrap);
   root.append(scroll);
 
-  if (params.gameOver || meta.hearts <= 0) {
+  if (params.gameOver || meta.ending === 'lost' || (!r && meta.hearts <= 0)) {
     wrap.append(
       el('div', { style: { textAlign: 'center', padding: '26px 0' } },
         el('div', { class: 'big-glyph' }, '🕯️'),
@@ -61,6 +61,10 @@ export function renderSummary({ app, root, params }) {
       statBox(r.bosses || 0, '首领'),
       statBox(r.hpLeft, '剩余生命'),
       statBox(r.deckSize, '牌组张数'),
+      statBox(r.damageDealt ?? 0, '造成伤害'),
+      statBox(r.damageTaken ?? 0, '承受伤害'),
+      statBox(r.turns ?? 0, '战斗回合'),
+      statBox(r.potionsUsed ?? 0, '使用药水'),
       statBox(r.goldEarned, '本局收入'),
       statBox(r.keptGold != null ? r.keptGold : 0, '带回金币'),
     ),
@@ -81,15 +85,28 @@ export function renderSummary({ app, root, params }) {
   if (r.healPct > 0 && victory) {
     wrap.append(el('div', { class: 'hint', style: { textAlign: 'center' } }, '医师莫尔替你处理了伤口。'));
   }
+  if (r.regions?.length) wrap.append(el('section', { class: 'region-report' },
+    el('h3', {}, '走过的区域'),
+    el('p', {}, r.regions.map((entry) => entry.name || `第 ${entry.act} 幕`).join(' · ')),
+    el('div', { class: 'stat-grid' }, statBox(r.sitesVisited || 0, '特殊地点'),
+      statBox(r.trialsCleared || 0, '完成试炼'), statBox(r.vaultsOpened || 0, '打开密库')),
+  ));
+  if (r.commission) {
+    const commission = r.commission;
+    wrap.append(el('section', { class: 'commission-report' },
+      el('h3', {}, commission.name),
+      el('div', { class: commission.success ? 'good-text' : 'hint' }, commission.reason),
+      el('ul', { class: 'commission-goals' }, (commission.goals || []).map((goal) =>
+        el('li', {}, `${goal.label} ${goal.value}/${goal.target}${goal.metric === 'hpPercent' ? '%' : ''}`))),
+      commission.success ? el('div', { class: 'commission-payout' },
+        `+${commission.gold} 金币 · +${commission.embers} 印记 · +${commission.reputation} 公会声望`) : null,
+    ));
+  }
 
-  const canContinue = !finalNight && meta.hearts > 0;
   wrap.append(el('div', { style: { textAlign: 'center', margin: '22px 0 44px' } },
     el('button', {
       class: 'btn primary xl',
-      onclick: () => {
-        if (!canContinue) { app.goto('tavern', { crowned: !!finalNight && victory }); return; }
-        app.advanceNight();
-      },
-    }, finalNight ? '回到酒馆' : canContinue ? '进入下一夜' : '灯芯已尽'),
+      onclick: () => app.advanceNight(r),
+    }, finalNight ? '回到酒馆' : meta.hearts > 0 ? '进入下一夜' : '灯芯已尽'),
   ));
 }

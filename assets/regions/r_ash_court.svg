@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="灰烬法庭的黑石判台、阶梯与余火">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="m395 179 69-49 53 43 37-23 33 37 87-38 66 24 53-28 60 26 73-23 74 29v63H344z" fill="#45403e"/>
+  <path d="M607 65h264v115H607z" fill="#585d51"/>
+  <path d="m599 65 53-41 85-16 88 18 55 39z" fill="#8b8271"/>
+  <path d="M620 67h23v108h-23zm57 0h22v108h-22zm100 0h22v108h-22zm57 0h22v108h-22z" fill="#a0a38e"/>
+  <path d="M709 82h54v78h-54z" fill="#242522" stroke="#d18b65" stroke-width="4"/>
+  <path d="m721 141 15-18 14 18m-14-18V94m-20 4h39m-33 0-9 19h19m17-19-9 19h19" stroke="#d8ac79" stroke-width="3" fill="none"/>
+  <path d="M589 178h299v13H589zm-21 14h341v13H568zm-24 15h389v13H544z" fill="#817d67"/>
+  <path d="m440 218 46-18 16 13 34-8m393 10 23-13 37 17" stroke="#df8e58" stroke-width="4" fill="none"/>
+  <path d="M560 155h17v27h-17zm330 0h17v27h-17z" fill="#a6815d"/>
+  <path d="m558 155 4-22 7 9 5-15 5 28zm330 0 5-20 7 6 3-15 7 29z" fill="#e5ae6a"/>
+  <path d="M497 230h110m166 0h178" stroke="#b9a286" stroke-width="2"/>
+</svg>

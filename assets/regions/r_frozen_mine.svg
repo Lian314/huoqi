@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="冰封盐井的冰壁、吊笼与矿道入口">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="m431 167 35-93 56 18 41-54 32 11 29 122zm334 0 14-124 50 19 28-43 45 31 33-12 65 81v121H729z" fill="#567f82"/>
+  <path d="m459 126 18-40 44 18 41-51 28 9 11 63-30-27-27 44zm329-51 36 16 37-43 28 25 41-12 47 65-58-22-16 19-36-36-42 31z" fill="#adc9c4"/>
+  <path d="M563 177V83h18v94m111 0V83h18v94m-155-92h163v15H555z" fill="#9a9f88"/>
+  <path d="m581 175 58-75 54 75" stroke="#ced8bf" stroke-width="5" fill="none"/>
+  <path d="M594 176v-25q0-42 43-42t43 42v25z" fill="#142c2d"/>
+  <path d="M804 44v115m-70-102h111m-94-17h18v132h-18" stroke="#d5d6ae" stroke-width="4" fill="none"/>
+  <path d="M785 131h39v42h-39z" fill="#729a98" stroke="#e2dcc2" stroke-width="3"/>
+  <path d="M794 137v28m10-28v28m11-28v28" stroke="#2f5359" stroke-width="3"/>
+  <path d="m617 178-40 62m77-62 61 62m-133-38h97m-109 19h128" stroke="#b3c5b1" stroke-width="5" fill="none"/>
+  <path d="M421 183h156m111 0h312v20H674l-69-6H421z" fill="#b9d3ca"/>
+  <path d="m477 182 11 14 13-14m340 0 12 20 15-20" fill="#78aeb2"/>
+</svg>

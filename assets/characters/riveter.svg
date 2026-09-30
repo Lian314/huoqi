@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img">
+  <title>The Riveter</title>
+  <path fill="#142428" d="M0 0h256v256H0z"/>
+  <path fill="#2f6263" d="M0 189 91 80l76 21 89 106v49H0z"/>
+  <path fill="#38464a" d="m36 256 12-69 45-27h70l45 27 12 69z"/>
+  <path fill="#a5b4a6" d="m68 186 34-23 14 93H56zm120 0-34-23-14 93h60z"/>
+  <path fill="#506468" stroke="#1b292d" stroke-width="5" d="m110 180 18 13 18-13 17 76H93z"/>
+  <path fill="#d6ad88" d="M82 74q5-42 46-42t46 42l-4 64-22 27h-40l-22-27z"/>
+  <path fill="#b88569" d="m132 92 7 32h-18l6-13zm-30 48h49l-22 15z"/>
+  <path fill="#819497" stroke="#253c40" stroke-width="5" d="M67 78q2-56 61-56t61 56l-16 9H83z"/>
+  <path fill="#d1bd77" d="M113 23h30v51h-30z"/>
+  <path fill="#4f6468" d="M64 75h128v14H64z"/>
+  <path fill="#222f35" d="M79 86h45v30H80zm53 0h45v30h-45z"/>
+  <path fill="#b9d2c0" d="M87 91h27v17H87zm55 0h27v17h-27z"/>
+  <path fill="#566c6f" d="M123 96h11v8h-11z"/>
+  <path fill="#c5d0c2" d="m43 204 21 4-6 46H31zm170 0-21 4 6 46h27z"/>
+  <path stroke="#d5b260" stroke-width="7" d="m42 231 163-75"/>
+  <path fill="#bac5bc" stroke="#263c40" stroke-width="4" d="m186 135 22 1 20 40-31 14-20-20z"/>
+  <path fill="#dfc56d" d="M72 190h8v8h-8zm108 0h8v8h-8zM108 210h9v9h-9zm29 0h9v9h-9z"/>
+</svg>

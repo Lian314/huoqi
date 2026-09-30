@@ -5,22 +5,28 @@ import { applyRunEffects, formatLog } from '../../systems/outcome.js';
 import { ALL_EVENTS, eventDef, relic as relicDef, potion as potionDef, card as cardDef } from '../../data/index.js';
 import { grantRelic, grantPotion, rollRelicReward, rollPotionReward, addCard } from '../../core/run.js';
 import { isUnlocked } from '../../systems/meta.js';
+import { findNode } from '../../systems/map.js';
 
-export function renderEvent({ app, root, params }) {
+export function renderEvent({ app, root, params, onDispose }) {
   const run = app.run;
-  const nodeId = params.nodeId;
+  if (!run) { app.goto('map'); return; }
+  const nodeId = params.nodeId || run.map.currentId;
 
   // 为该节点确定一个事件（同一节点固定）
   if (!run.eventSeed) run.eventSeed = {};
   if (!run.eventSeed[nodeId]) {
     const act = run.act;
-    const pool = ALL_EVENTS.filter((e) => !e.act || e.act === 0 || e.act === act);
-    const ev = run.rng.pick(pool.length ? pool : ALL_EVENTS);
+    const node = findNode(run.map, nodeId);
+    const pool = ALL_EVENTS.filter((e) => (!e.act || e.act === act) && (!e.regionId || e.regionId === run.map.regionId));
+    const ev = eventDef(node?.eventId) || run.rng.pick(pool.length ? pool : ALL_EVENTS);
     run.eventSeed[nodeId] = ev?.id;
   }
   const ev = eventDef(run.eventSeed[nodeId]) || ALL_EVENTS[0];
 
-  let done = false;
+  run.eventOutcomes ||= {};
+  let outcome = run.eventOutcomes[nodeId] || null;
+  let active = true;
+  onDispose?.(() => { active = false; });
   root.append(app.hud());
   const scroll = el('div', { class: 'scroll' });
   const wrap = el('div', { class: 'wrap-narrow' });
@@ -69,11 +75,15 @@ export function renderEvent({ app, root, params }) {
   }
 
   function doChoose(opt) {
-    if (done) return;
-    done = true;
+    if (!active || app.run !== run || run.eventOutcomes[nodeId]) return;
+    const chk = checkReq(opt.req);
+    if (!chk.ok) { toast(chk.why, 'bad'); return; }
+    outcome = { choice: ev.options.indexOf(opt), log: [], lootNotes: [] };
+    run.eventOutcomes[nodeId] = outcome;
     const result = opt.result || {};
     const { log } = applyRunEffects(run, result.effects);
-    const lootNotes = [];
+    outcome.log = log;
+    const lootNotes = outcome.lootNotes;
     const loot = result.loot || {};
 
     if (loot.gold) {
@@ -100,8 +110,24 @@ export function renderEvent({ app, root, params }) {
       if (got) lootNotes.push(`获得 ${got} 瓶药水`);
     }
 
-    const needCard = loot.cards ? { type: 'card', count: 1 } : null;
-    const needRelic = loot.relics ? { type: 'relic', count: 1 } : null;
+    if (run.hp <= 0) {
+      run.hp = 1;
+      setTimeout(() => { toast('你已经站不稳了', 'bad'); }, 400);
+    }
+    app.save();
+    app.rerender();
+  }
+
+  function openReward(step) {
+    if (!active || app.run !== run) return;
+    app.goto('reward', { from: 'event', step, count: 1, nodeId });
+  }
+
+  function renderResult() {
+    const result = ev.options[outcome.choice]?.result || {};
+    const loot = result.loot || {};
+    const log = outcome.log;
+    const lootNotes = outcome.lootNotes;
 
     clear(wrap);
     wrap.append(
@@ -118,26 +144,23 @@ export function renderEvent({ app, root, params }) {
     );
 
     const btns = el('div', { class: 'btn-row', style: { justifyContent: 'center', marginTop: '18px' } });
-    if (needCard) btns.append(el('button', {
-      class: 'btn primary', onclick: () => app.goto('reward', { from: 'event', step: 'card', count: 1 }),
+    if (loot.cards) btns.append(el('button', {
+      class: 'btn primary', onclick: () => openReward('card'),
     }, '查看奖励卡牌'));
-    if (needRelic) btns.append(el('button', {
-      class: 'btn primary', onclick: () => app.goto('reward', { from: 'event', step: 'relic', count: 1 }),
+    if (loot.relics) btns.append(el('button', {
+      class: 'btn primary', onclick: () => openReward('relic'),
     }, '取走遗物'));
     if (!btns.children.length) btns.append(el('button', { class: 'btn primary', onclick: backToMap }, '继续'));
     else btns.append(el('button', { class: 'btn ghost', onclick: backToMap }, '不拿了，继续'));
     wrap.append(btns);
 
-    if (run.hp <= 0) {
-      run.hp = 1;
-      setTimeout(() => { toast('你已经站不稳了', 'bad'); }, 400);
-    }
-    app.save();
   }
 
   function backToMap() {
+    if (!active || app.run !== run) return;
     app.afterNode();
   }
 
-  renderIntro();
+  if (outcome) renderResult();
+  else renderIntro();
 }

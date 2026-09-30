@@ -3,6 +3,11 @@ import { modal } from '../fx.js';
 import { hasSave, wipeMeta, newMeta, MAX_NIGHT } from '../../systems/meta.js';
 
 export function renderTitle({ app, root }) {
+  const enter = () => {
+    app.meta.flags.firstRun = false;
+    app.save();
+    app.resume();
+  };
   const wrap = el('div', { class: 'wrap', style: { padding: '40px 0 20px', textAlign: 'center' } });
 
   wrap.append(el('div', { class: 'big-glyph' }, '🏮'));
@@ -17,16 +22,16 @@ export function renderTitle({ app, root }) {
   const row = el('div', { class: 'btn-row', style: { justifyContent: 'center', marginTop: '34px' } });
   if (hasSave()) {
     row.append(
-      el('button', { class: 'btn primary xl', onclick: () => app.goto('tavern') }, '继续守夜'),
+      el('button', { class: 'btn primary xl', onclick: enter }, '继续守夜'),
       el('button', {
         class: 'btn danger', onclick: async () => {
           const ok = await confirmRestart();
-          if (ok) { wipeMeta(); app.meta = newMeta(); app.goto('title'); }
+          if (ok) { wipeMeta(); app.meta = newMeta(); app.run = null; app.battle = null; app.runResult = null; app.save(); app.goto('title'); }
         },
       }, '重开守夜'),
     );
   } else {
-    row.append(el('button', { class: 'btn primary xl', onclick: () => app.goto('tavern') }, '点亮第一盏灯'));
+    row.append(el('button', { class: 'btn primary xl', onclick: enter }, '点亮第一盏灯'));
   }
   row.append(el('button', { class: 'btn ghost', onclick: showHelp }, '玩法说明'));
   wrap.append(row);
@@ -44,6 +49,7 @@ async function confirmRestart() {
       title: '重开守夜？',
       sub: '当前的金币、设施、员工、解锁与全部进度都会被抹去。',
       dismissable: true,
+      onClose: () => res(false),
       actions: [
         { label: '再想想', kind: 'ghost', onClick: () => res(false) },
         { label: '抹去重来', kind: 'danger', onClick: () => res(true) },

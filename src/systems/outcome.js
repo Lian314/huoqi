@@ -18,7 +18,7 @@ export function makeRunCtx(run, opts = {}) {
   return {
     battle, run, self, target: opts.target || null,
     rng: run.rng, perspective: 'player', inRun: true,
-    onGrantRelic: () => {},
+    onGrantRelic: () => run.grantRelic?.('random'),
   };
 }
 
@@ -26,8 +26,8 @@ export function makeRunCtx(run, opts = {}) {
 export function applyRunEffects(run, ops, opts = {}) {
   const ctx = makeRunCtx(run, opts);
   if (ops?.length) resolveOps(ops, ctx);
-  run.hp = Math.max(0, Math.min(run.maxHp, ctx.self.hp));
   run.maxHp = Math.max(1, ctx.self.maxHp);
+  run.hp = Math.max(0, Math.min(run.maxHp, ctx.self.hp));
   return { log: ctx.battle.log, ctx };
 }
 

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="血契旧城的议院尖塔、血色旗帜与高桥">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="M405 104h76v136h-76zm90-32h87v168h-87zm95 42h79v126h-79zm270-14h62v140h-62zm69-42h71v182h-71z" fill="#35423d"/>
+  <path d="M656 83h212v157H656z" fill="#627067"/>
+  <path d="m648 84 52-26 69-7 58 5 49 28zM693 61V32l17-21 18 21v29m47-7V20l13-20 14 20v37m34 13V36l17-20 16 20v44" fill="#ad726e"/>
+  <path d="M686 93h21v98h-21zm59 0h21v98h-21zm58 0h21v98h-21z" fill="#bdba9c"/>
+  <path d="M731 192v-50q0-36 26-36t26 36v50z" fill="#203d35" stroke="#d2b095" stroke-width="5"/>
+  <path d="M647 196h232v13H647zm-17 14h264v15H630z" fill="#9f9d83"/>
+  <path d="M525 95h35v68l-18-15-17 15zm389-9h34v69l-17-18-17 18z" fill="#ae575b"/>
+  <path d="M461 158h196v14H461zm400 3h139v14H861z" fill="#99a183"/>
+  <path d="M476 172q34-31 66 0v68h-66zm66 0q35-31 71 0v68h-71zm335 3q30-28 58 0v65h-58z" fill="#101b1a"/>
+  <path d="M459 128h12m36-39h14m99 43h13m297-56h15m31 20h12" stroke="#daa77c" stroke-width="7"/>
+  <path d="M610 232h286" stroke="#ce8f86" stroke-width="3"/>
+</svg>

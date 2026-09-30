@@ -55,9 +55,7 @@ export function rewardPool(unlocked = null) {
 }
 
 /** 角色专属初始遗物：无论 rarity 标注如何，都不进入随机遗物池 */
-export const STARTER_RELICS = new Set([
-  'relic_ember_heart', 'relic_copper_key', 'relic_salt_ledger', 'relic_tide_locket', 'relic_ash_charm',
-]);
+export const STARTER_RELICS = new Set(CHARACTERS.map((entry) => entry.relic).filter(Boolean));
 
 /** 遗物池：排除 starter 遗物 */
 export function relicPool(unlocked = null) {

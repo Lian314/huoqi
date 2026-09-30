@@ -1,5 +1,5 @@
 // 效果数组 → 中文描述（数据未写 text 时的兜底渲染）
-import { STATUS } from '../data/index.js';
+import { STATUS, card as cardDef } from '../data/index.js';
 
 const T = {
   S: '力量', '2S': '力量的2倍', B: '当前格挡', hand: '手牌数', deck: '牌组张数', discard: '弃牌堆张数',
@@ -56,17 +56,17 @@ export function describe(ops) {
       case 'doubleBlock': parts.push('格挡翻倍'); break;
       case 'heal': parts.push(`回复 ${val(op.n)} 点生命`); break;
       case 'loseHp': parts.push(`失去 ${val(op.n)} 点生命`); break;
-      case 'maxHp': parts.push(`最大生命 +${val(op.n)}`); break;
+      case 'maxHp': parts.push(`最大生命 +${val(op.n)}，当前生命增加 ${val(op.n)}`); break;
       case 'gold': parts.push(`获得 ${op.n} 金币`); break;
       case 'buff': parts.push(`获得 ${val(op.v)} 层【${STATUS[op.s]?.name || op.s}】${tgt(op.t)}`); break;
       case 'debuff': parts.push(`施加 ${val(op.v)} 层【${STATUS[op.s]?.name || op.s}】${tgt(op.t)}`); break;
       case 'draw': parts.push(`抽 ${val(op.n)} 张牌`); break;
       case 'energy': parts.push(`获得 ${val(op.n)} 点能量`); break;
       case 'scry': parts.push(`预知 ${val(op.n)} 张`); break;
-      case 'addHand': parts.push(`将 ${op.n ?? 1} 张牌置入手牌`); break;
-      case 'addDiscard': parts.push(`将 ${op.n ?? 1} 张牌置入弃牌堆`); break;
-      case 'addDeck': parts.push('将一张牌永久加入牌组'); break;
-      case 'shuffleIn': parts.push(`将 ${op.n ?? 1} 张牌洗入抽牌堆`); break;
+      case 'addHand': parts.push(`将 ${op.n ?? 1} 张【${cardDef(op.card)?.name || op.card}】置入手牌`); break;
+      case 'addDiscard': parts.push(`将 ${op.n ?? 1} 张【${cardDef(op.card)?.name || op.card}】置入弃牌堆`); break;
+      case 'addDeck': parts.push(`将【${cardDef(op.card)?.name || op.card}】永久加入牌组`); break;
+      case 'shuffleIn': parts.push(`将 ${op.n ?? 1} 张【${cardDef(op.card)?.name || op.card}】洗入抽牌堆`); break;
       case 'exhaustSelf': parts.push('消耗此牌'); break;
       case 'retainSelf': parts.push('此牌本回合保留'); break;
       case 'removeCard': parts.push('从牌组中移除一张牌'); break;

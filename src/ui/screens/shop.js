@@ -1,26 +1,31 @@
 import { el, clear } from '../../core/utils.js';
 import { panel, toast, sectionTitle, statBox, confirmDialog, modal } from '../fx.js';
 import { cardEl, choiceEl, relicChipEl } from '../components.js';
-import { ALL_CARDS, ALL_RELICS, ALL_POTIONS, card as cardDef, relic as relicDef, potion as potionDef, RARITY_LABEL } from '../../data/index.js';
-import { grantRelic, grantPotion, addCard, removeCardAt, upgradeCardAt } from '../../core/run.js';
+import { ALL_CARDS, ALL_RELICS, ALL_POTIONS, STARTER_RELICS, card as cardDef, relic as relicDef, potion as potionDef, RARITY_LABEL } from '../../data/index.js';
+import { grantRelic, grantPotion, addCard, removeCardAt, upgradeCardAt, cardDisplay } from '../../core/run.js';
 import { isUnlocked } from '../../systems/meta.js';
 import { relicHook } from '../../systems/effects.js';
 import { makeRunCtx } from '../../systems/outcome.js';
+import { potionDisplay } from '../../systems/battle.js';
 
 const CARD_PRICE = { common: [45, 62], uncommon: [72, 96], rare: [128, 165] };
 const RELIC_PRICE = { common: [140, 180], uncommon: [220, 275], rare: [300, 375], boss: [420, 500] };
 const POTION_PRICE = { common: [45, 60], uncommon: [70, 92], rare: [105, 135] };
 
-export function renderShop({ app, root, params }) {
+export function renderShop({ app, root, params, onDispose }) {
   const run = app.run;
+  if (!run) { app.goto('map'); return; }
   const b = app.bonuses;
   const nodeId = params.nodeId;
+  let active = true;
+  onDispose?.(() => { active = false; });
+  const unlocked = (kind, item) => !item.unlock?.embers || isUnlocked(app.meta, kind, item.id);
 
   if (!run.shopState || run.shopState.node !== nodeId) {
     const mult = (1 - Math.min(0.55, b.shopDiscount));
     const cards = [];
-    const wantCards = 5 + b.shopCardsBonus;
-    const pool = ALL_CARDS.filter((c) => ['common', 'uncommon', 'rare'].includes(c.rarity) && c.rarity !== 'curse');
+    const wantCards = 5 + b.shopCards;
+    const pool = ALL_CARDS.filter((c) => ['common', 'uncommon', 'rare'].includes(c.rarity) && unlocked('cards', c));
     for (let i = 0; i < wantCards; i++) {
       const roll = run.rng.next();
       const rarity = roll < 0.62 ? 'common' : roll < 0.9 ? 'uncommon' : 'rare';
@@ -31,7 +36,7 @@ export function renderShop({ app, root, params }) {
       cards.push({ id: c.id, price: Math.round(run.rng.int(lo, hi) * mult), sold: false });
     }
     const relics = [];
-    const rpool = ALL_RELICS.filter((r) => r.rarity !== 'starter' && !['relic_ember_heart', 'relic_copper_key', 'relic_salt_ledger', 'relic_tide_locket', 'relic_ash_charm'].includes(r.id) && !run.relics.includes(r.id));
+    const rpool = ALL_RELICS.filter((r) => r.rarity !== 'starter' && !STARTER_RELICS.has(r.id) && !run.relics.includes(r.id) && unlocked('relics', r));
     for (const r of run.rng.sample(rpool, 3)) {
       const [lo, hi] = RELIC_PRICE[r.rarity] || [150, 200];
       relics.push({ id: r.id, price: Math.round(run.rng.int(lo, hi) * mult), sold: false });
@@ -46,13 +51,32 @@ export function renderShop({ app, root, params }) {
   }
 
   const shop = run.shopState;
-  root.append(app.hud());
+  let hud = app.hud();
+  root.append(hud);
   const scroll = el('div', { class: 'scroll' });
   const wrap = el('div', { class: 'wrap' });
   scroll.append(wrap);
   root.append(scroll);
 
+  function canAct() {
+    return active && app.run === run && run.shopState === shop;
+  }
+
+  function purchase(item, grant) {
+    if (!canAct() || item.sold) return;
+    if (run.gold < item.price) { toast('金币不足', 'bad'); return; }
+    if (grant() === false) return;
+    run.gold -= item.price;
+    item.sold = true;
+    app.save();
+    render();
+  }
+
   function render() {
+    if (!canAct()) return;
+    const nextHud = app.hud();
+    hud.replaceWith(nextHud);
+    hud = nextHud;
     clear(wrap);
     wrap.append(el('div', { class: 'tavern-hero' },
       el('div', { class: 'big-glyph' }, '🧳'),
@@ -76,13 +100,10 @@ export function renderShop({ app, root, params }) {
           : el('button', {
             class: `btn sm ${run.gold >= item.price ? 'gold' : 'ghost'}`,
             disabled: run.gold < item.price,
-            onclick: () => {
-              run.gold -= item.price;
-              grantRelic(run, d.id);
-              item.sold = true;
+            onclick: () => purchase(item, () => {
+              if (!unlocked('relics', d) || !grantRelic(run, d.id)) return false;
               toast(`获得遗物：${d.name}`, 'gold');
-              app.save(); render();
-            },
+            }),
           }, `💰 ${item.price}`),
       ));
     }
@@ -94,7 +115,7 @@ export function renderShop({ app, root, params }) {
     const potPanel = panel('药 剂');
     const plist = el('div', { class: 'btn-grid' });
     for (const item of shop.potions) {
-      const d = potionDef(item.id);
+      const d = potionDisplay(run, potionDef(item.id));
       if (!d) continue;
       plist.append(el('div', { class: 'shop-item' },
         el('div', { class: 'icon', text: d.glyph || '🧪' }),
@@ -106,12 +127,10 @@ export function renderShop({ app, root, params }) {
           : el('button', {
             class: `btn sm ${run.gold >= item.price && run.potions.length < run.potionSlots ? 'gold' : 'ghost'}`,
             disabled: run.gold < item.price || run.potions.length >= run.potionSlots,
-            onclick: () => {
-              if (!grantPotion(run, d.id)) { toast('药水栏已满', 'bad'); return; }
-              run.gold -= item.price; item.sold = true;
+            onclick: () => purchase(item, () => {
+              if (!grantPotion(run, d.id)) { toast('药水栏已满', 'bad'); return false; }
               toast(`获得 ${d.name}`, 'good');
-              app.save(); render();
-            },
+            }),
           }, `💰 ${item.price}`),
       ));
     }
@@ -130,13 +149,11 @@ export function renderShop({ app, root, params }) {
         class: `btn sm ${item.sold ? 'ghost' : run.gold >= item.price ? 'gold' : 'ghost'}`,
         style: { position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: '10px', zIndex: 6, minWidth: '72px' },
         disabled: item.sold || run.gold < item.price,
-        onclick: () => {
-          run.gold -= item.price;
+        onclick: () => purchase(item, () => {
+          if (!unlocked('cards', d)) return false;
           addCard(run, d.id);
-          item.sold = true;
           toast(`获得卡牌：${d.name}`, 'good');
-          app.save(); render();
-        },
+        }),
       }, item.sold ? '已购' : `💰 ${item.price}`));
       grid.append(box);
     }
@@ -145,7 +162,7 @@ export function renderShop({ app, root, params }) {
 
     // 服务
     const svc = el('div', { class: 'btn-grid', style: { marginTop: '4px' } });
-    const canRemove = b.campfireRemove || run.deck.length > 5;
+    const canRemove = b.campfireRemove && run.deck.length > 5;
     svc.append(el('div', { class: 'shop-item' },
       el('div', { class: 'icon' }, '🪚'),
       el('div', { class: 'body' },
@@ -153,16 +170,18 @@ export function renderShop({ app, root, params }) {
         el('div', { class: 'ds' }, b.campfireRemove ? '从牌组中永久移除一张牌。' : '（需要「拆解台」升级）'),
       ),
       el('button', {
-        class: `btn sm ${run.gold >= shop.removeCost && b.campfireRemove ? 'gold' : 'ghost'}`,
-        disabled: run.gold < shop.removeCost || !b.campfireRemove,
+        class: `btn sm ${run.gold >= shop.removeCost && canRemove ? 'gold' : 'ghost'}`,
+        disabled: run.gold < shop.removeCost || !canRemove,
         onclick: () => openCardPicker('移除一张牌', (idx) => {
+          if (!app.bonuses.campfireRemove || run.deck.length <= 5) { toast('无法继续拆解', 'bad'); return false; }
+          if (run.gold < shop.removeCost) { toast('金币不足', 'bad'); return false; }
           const c = run.deck[idx];
           run.gold -= shop.removeCost;
           removeCardAt(run, idx);
           shop.removeCost += 25;
           toast(`拆解了【${cardDef(c.id)?.name}】`, 'gold');
           app.save(); render();
-        }, canRemove),
+        }),
       }, `💰 ${shop.removeCost}`),
     ));
 
@@ -178,7 +197,8 @@ export function renderShop({ app, root, params }) {
           class: `btn sm ${run.gold >= 70 ? 'gold' : 'ghost'}`,
           disabled: run.gold < 70,
           onclick: () => openCardPicker('升级一张牌', (idx) => {
-            if (run.deck[idx].upgraded) { toast('这张牌已升级', 'bad'); return; }
+            if (!app.bonuses.forgeUpgrade || run.gold < 70) { toast('无法锻造', 'bad'); return false; }
+            if (run.deck[idx].upgraded || !cardDef(run.deck[idx].id)?.upgrade) { toast('这张牌无法升级', 'bad'); return false; }
             run.gold -= 70;
             upgradeCardAt(run, idx);
             toast('锻造完成', 'good');
@@ -198,6 +218,7 @@ export function renderShop({ app, root, params }) {
           class: `btn sm ${run.gold >= 45 ? 'gold' : 'ghost'}`,
           disabled: run.gold < 45,
           onclick: () => {
+            if (!canAct() || run.gold < 45 || run.hp >= run.maxHp) return;
             run.gold -= 45;
             const before = run.hp;
             run.hp = Math.min(run.maxHp, run.hp + Math.round(run.maxHp * 0.3));
@@ -215,15 +236,27 @@ export function renderShop({ app, root, params }) {
   }
 
   function openCardPicker(title, cb, onlyNotUpgraded = false) {
+    if (!canAct()) return;
     const grid = el('div', { class: 'card-grid' });
-    run.deck.forEach((inst, idx) => {
-      if (onlyNotUpgraded && inst.upgraded) return;
-      const d = cardDef(inst.id);
+    let closed = false;
+    let picked = false;
+    let close = () => {};
+    run.deck.forEach((inst) => {
+      const d = cardDisplay(run, inst);
       if (!d) return;
-      grid.append(cardEl(d, { size: '', onClick: () => { cb(idx); } }));
+      if (onlyNotUpgraded && (inst.upgraded || !d.upgrade)) return;
+      grid.append(cardEl(d, { size: '', onClick: () => {
+        if (closed || picked || !canAct()) return;
+        const idx = run.deck.findIndex((c) => c.uid === inst.uid);
+        if (idx < 0) { toast('这张牌已不在牌组中', 'bad'); return; }
+        if (onlyNotUpgraded && run.deck[idx].upgraded) { toast('这张牌已升级', 'bad'); return; }
+        if (cb(idx) === false) return;
+        picked = true;
+        close();
+      } }));
     });
     if (!grid.children.length) grid.append(el('div', { class: 'hint' }, '没有可选的牌。'));
-    modal({ title, sub: '点击一张牌', body: grid, actions: [{ label: '取消', kind: 'ghost' }] });
+    close = modal({ title, sub: '点击一张牌', body: grid, actions: [{ label: '取消', kind: 'ghost' }], onClose: () => { closed = true; } });
   }
 
   render();

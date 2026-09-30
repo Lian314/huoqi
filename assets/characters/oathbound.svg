@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img">
+  <title>The Oathbound</title>
+  <path fill="#29212b" d="M0 0h256v256H0z"/>
+  <path fill="#763c50" d="M0 180 65 105l47 75 83-97 61 128v45H0z"/>
+  <path fill="#40424a" d="m36 256 13-72 40-30h79l40 30 12 72z"/>
+  <path fill="#ac7f74" d="M86 67q6-38 44-38t43 38l-5 64-23 26h-33l-23-26z"/>
+  <path fill="#d4c4ad" d="m84 72 46 10 44-15-1 22-42 13-47-12z"/>
+  <path fill="#242931" d="m85 69 10-37 42-13 27 21 14 26-20 8-32-23-26 21z"/>
+  <path stroke="#382b36" stroke-width="5" d="M100 108h17m24 0h17"/>
+  <path stroke="#a34e58" stroke-width="4" d="m148 100-17 24 14 20"/>
+  <path fill="#cfb19a" d="m129 109 4 21h-13z"/>
+  <path fill="#b34659" d="m75 148 58 28 46-26 16 33-61 26-67-25z"/>
+  <path fill="#d06572" d="m134 194 26 14-17 48h-26z"/>
+  <path fill="#959492" d="m56 184 20-7 12 79H44zm140 0-20-7-12 79h44z"/>
+  <path stroke="#d5c7ad" stroke-width="9" d="m63 197-14 51m27-43-14 49m119-57 14 51m-27-43 14 49"/>
+  <path fill="#d7c0a2" d="m116 186 17-8 16 8-16 15z"/>
+  <path fill="#262a31" d="m169 120 12 5-40 119-13-6z"/>
+  <path fill="#d1c4a8" d="m151 163 38 12-4 11-39-12z"/>
+</svg>

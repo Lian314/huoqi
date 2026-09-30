@@ -3,11 +3,11 @@
 // op 名称 / 字段名 / cond 对象严格遵循 docs/DATA_SPEC.md。
 // 钩子内不继承「卡牌指定」，因此每个 buff/debuff 都显式写 t。
 
-// rarity 分布：starter 4 / common 16 / uncommon 12 / rare 6 / boss 2
-// 角色初始遗物固定 id：relic_ember_heart / relic_copper_key / relic_salt_ledger / relic_tide_locket / relic_ash_charm
+// rarity 分布：starter 7 / common 25 / uncommon 20 / rare 9 / boss 3
+// 角色初始遗物通过 characters.js 绑定，不进入随机遗物池。
 
 export const RELICS = [
-  // ---------- starter 4 ----------
+  // ---------- starter 7 ----------
   {
     id: 'relic_ember_heart',
     name: '余烬之心',
@@ -61,7 +61,45 @@ export const RELICS = [
     mod: {},
   },
 
-  // ---------- common 16 ----------
+  {
+    id: 'relic_rivet_core',
+    name: '铆芯',
+    rarity: 'starter',
+    glyph: '🔩',
+    desc: '每场战斗开始时获得 1 层碎裂。首回合开始时获得 4 点格挡。',
+    flavor: '船壳可以破，最后一颗铆钉不能松。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'splinter', v: 1, t: 'self' }],
+      onTurnStart: [{ op: 'if', cond: { type: 'turn', n: 1 }, then: [{ op: 'block', v: 4 }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_lantern_wick',
+    name: '幽灯芯',
+    rarity: 'starter',
+    glyph: '🕯️',
+    desc: '每场战斗开始时获得 1 层专注：首回合下一张非 X 费用牌的费用 -1。未使用的专注在回合结束时衰减。',
+    flavor: '亮一寸，路就多一寸。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'focus', v: 1, t: 'self' }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_oath_seal',
+    name: '誓印',
+    rarity: 'starter',
+    glyph: '📜',
+    desc: '每场战斗开始时获得 2 层坚毅。致命伤害消耗 1 层并保留 1 点生命；每回合结束时衰减 1 层。',
+    flavor: '不求活到天明，只求这一刻还站着。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'resolve', v: 2, t: 'self' }],
+    },
+    mod: {},
+  },
+
+  // ---------- common 25 ----------
   {
     id: 'relic_ash_charm',
     name: '灰烬护符',
@@ -249,7 +287,112 @@ export const RELICS = [
     mod: { cardRewardPlus: 1 },
   },
 
-  // ---------- uncommon 12 ----------
+  {
+    id: 'relic_early_anchor',
+    name: '首潮锚',
+    rarity: 'common',
+    glyph: '⚓',
+    desc: '每场战斗的首回合开始时获得 6 点格挡。',
+    flavor: '潮水第一下总最凶，把锚落在那一下之前。',
+    hooks: {
+      onTurnStart: [{ op: 'if', cond: { type: 'turn', n: 1 }, then: [{ op: 'block', v: 6 }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_coal_gauze',
+    name: '炭纱',
+    rarity: 'common',
+    glyph: '🩹',
+    desc: '每场战斗开始时回复 3 点生命。',
+    flavor: '烧焦的纱布不能洗，只能再绑紧一点。',
+    hooks: {
+      onBattleStart: [{ op: 'heal', n: 3 }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_spark_pin',
+    name: '火针',
+    rarity: 'common',
+    glyph: '📌',
+    desc: '每场战斗开始时，对所有敌人施加 2 层灼烧。',
+    flavor: '针尖不大，足够让一件衣服从里面烧起来。',
+    hooks: {
+      onBattleStart: [{ op: 'debuff', s: 'burn', v: 2, t: 'allEnemies' }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_clear_prism',
+    name: '澄晶',
+    rarity: 'common',
+    glyph: '💎',
+    desc: '每场战斗的首回合开始时多抽 1 张牌。',
+    flavor: '它只照清第一步，剩下的要自己看。',
+    hooks: {
+      onTurnStart: [{ op: 'if', cond: { type: 'turn', n: 1 }, then: [{ op: 'draw', n: 1 }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_seam_needle',
+    name: '缝骨针',
+    rarity: 'common',
+    glyph: '🪡',
+    desc: '每回合打出第一张牌后，获得 3 点格挡。',
+    flavor: '先缝住自己，再去撕开别人。',
+    hooks: {
+      onCardPlay: [{ op: 'if', cond: { type: 'firstCardOfTurn' }, then: [{ op: 'block', v: 3 }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_iron_sandbag',
+    name: '铁砂袋',
+    rarity: 'common',
+    glyph: '🎒',
+    desc: '获得时最大生命与当前生命 +6。',
+    flavor: '里面装的不是砂，是六枚未发出的船票。',
+    hooks: {},
+    mod: { maxHpPlus: 6 },
+  },
+  {
+    id: 'relic_etched_collar',
+    name: '刻痕颈环',
+    rarity: 'common',
+    glyph: '⭕',
+    desc: '每场战斗开始时，对所有敌人施加 1 层标记。',
+    flavor: '每道刻痕都记着一个弱处。',
+    hooks: {
+      onBattleStart: [{ op: 'debuff', s: 'mark', v: 1, t: 'allEnemies' }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_corked_flask',
+    name: '木塞瓶',
+    rarity: 'common',
+    glyph: '🍾',
+    desc: '药水栏位 +1。',
+    flavor: '塞子很旧，瓶里的东西还留得住。',
+    hooks: {},
+    mod: { potionSlotsPlus: 1 },
+  },
+  {
+    id: 'relic_shatter_coin',
+    name: '裂币',
+    rarity: 'common',
+    glyph: '🪙',
+    desc: '每场战斗开始时获得 2 层碎裂。每回合首次格挡被打光时，消耗 1 层并留下 1 点格挡。',
+    flavor: '断成两半，各自还能抵一笔小债。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'splinter', v: 2, t: 'self' }],
+    },
+    mod: {},
+  },
+
+  // ---------- uncommon 20 ----------
   {
     id: 'relic_deep_lantern',
     name: '深渊提灯',
@@ -413,7 +556,104 @@ export const RELICS = [
     mod: {},
   },
 
-  // ---------- rare 6 ----------
+  {
+    id: 'relic_lantern_shutter',
+    name: '提灯遮板',
+    rarity: 'uncommon',
+    glyph: '🏮',
+    desc: '每场战斗前 2 个回合开始时，获得 1 层专注。未使用的专注在回合结束时衰减。',
+    flavor: '少漏一点光，就能多走一段路。',
+    hooks: {
+      onTurnStart: [{ op: 'if', cond: { type: 'turn', n: 2 }, then: [{ op: 'buff', s: 'focus', v: 1, t: 'self' }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_rivet_brace',
+    name: '铆接护腕',
+    rarity: 'uncommon',
+    glyph: '🦾',
+    desc: '获得的格挡 +1。每场战斗开始时获得壁垒，格挡可跨回合保留。',
+    flavor: '一片片补上的铁，终于比原来的船还牢。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'barricade', v: 1, t: 'self' }],
+    },
+    mod: { blockPlus: 1 },
+  },
+  {
+    id: 'relic_oath_knot',
+    name: '誓结',
+    rarity: 'uncommon',
+    glyph: '🪢',
+    desc: '每场战斗前 2 个回合开始时获得 2 层坚毅。致命伤害消耗 1 层并保留 1 点生命；每回合结束衰减 1 层。',
+    flavor: '绳上的两个结，各留着一句还没说完的话。',
+    hooks: {
+      onTurnStart: [{ op: 'if', cond: { type: 'turn', n: 2 }, then: [{ op: 'buff', s: 'resolve', v: 2, t: 'self' }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_black_cap',
+    name: '黑盖',
+    rarity: 'uncommon',
+    glyph: '🛡️',
+    desc: '每击杀一个敌人，获得 6 点格挡。',
+    flavor: '酒馆里空一把椅子，门上就补一块铁。',
+    hooks: {
+      onKill: [{ op: 'block', v: 6 }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_echo_shell',
+    name: '回声贝',
+    rarity: 'uncommon',
+    glyph: '🐚',
+    desc: '每场战斗开始时获得 1 层回响，使下一张打出的牌效果再次触发一次。',
+    flavor: '对着它说过的话，迟早要再听一遍。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'echo', v: 1, t: 'self' }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_brine_receipt',
+    name: '潮盐收据',
+    rarity: 'uncommon',
+    glyph: '🧾',
+    desc: '每击杀一个敌人，获得 5 金币。',
+    flavor: '海不认你的钱，码头上有人认。',
+    hooks: {
+      onKill: [{ op: 'gold', n: 5 }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_glass_hourglass',
+    name: '玻璃漏钟',
+    rarity: 'uncommon',
+    glyph: '⌛',
+    desc: '每场战斗前 3 个回合结束时，对所有敌人造成 2 点基础攻击伤害。',
+    flavor: '沙漏倒完前，窗外的敲击不能停。',
+    hooks: {
+      onTurnEnd: [{ op: 'if', cond: { type: 'turn', n: 3 }, then: [{ op: 'damageAll', v: 2 }] }],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_warden_token',
+    name: '巡夜令',
+    rarity: 'uncommon',
+    glyph: '📛',
+    desc: '每场战斗开始时，对所有敌人施加 2 层虚弱。对精英和 Boss 的攻击伤害 +1。',
+    flavor: '看见这枚令牌，就知道今夜有人守着。',
+    hooks: {
+      onBattleStart: [{ op: 'debuff', s: 'weak', v: 2, t: 'allEnemies' }],
+    },
+    mod: { eliteDamagePlus: 1 },
+  },
+
+  // ---------- rare 9 ----------
   {
     id: 'relic_molten_crown',
     name: '熔铸王冠',
@@ -494,7 +734,46 @@ export const RELICS = [
     mod: { potionSlotsPlus: 1 },
   },
 
-  // ---------- boss 2 ----------
+  {
+    id: 'relic_pressure_crown',
+    name: '压舱冠',
+    rarity: 'rare',
+    glyph: '👑',
+    desc: '每场战斗开始时获得 2 层力量与 1 层敏捷。',
+    flavor: '重物放在头顶，反而站得更稳。',
+    hooks: {
+      onBattleStart: [
+        { op: 'buff', s: 'strength', v: 2, t: 'self' },
+        { op: 'buff', s: 'dexterity', v: 1, t: 'self' },
+      ],
+    },
+    mod: {},
+  },
+  {
+    id: 'relic_cage_heart',
+    name: '笼芯',
+    rarity: 'rare',
+    glyph: '⚙️',
+    desc: '最大能量 +1；每回合开始时少抽 1 张牌。',
+    flavor: '把心跳关进铁笼，换一刻更有力的轰鸣。',
+    hooks: {},
+    mod: { energyPlus: 1, drawPlus: -1 },
+  },
+  {
+    id: 'relic_bone_bell',
+    name: '骨钟',
+    rarity: 'rare',
+    glyph: '🔔',
+    desc: '每场战斗开始时获得 3 层荆棘。每击杀一个敌人，回复 3 点生命。',
+    flavor: '钟声不是催人上路，是提醒人该回来了。',
+    hooks: {
+      onBattleStart: [{ op: 'buff', s: 'thorns', v: 3, t: 'self' }],
+      onKill: [{ op: 'heal', n: 3 }],
+    },
+    mod: {},
+  },
+
+  // ---------- boss 3 ----------
   {
     id: 'relic_the_long_forge',
     name: '长炉',
@@ -530,5 +809,17 @@ export const RELICS = [
       ],
     },
     mod: { maxHpPlus: 20 },
+  },
+  {
+    id: 'relic_tidewheel',
+    name: '潮轮机',
+    rarity: 'boss',
+    glyph: '🌊',
+    desc: '最大能量 +1，获得的格挡 +2。每场战斗开始时失去 5 点生命。',
+    flavor: '把潮水引进炉膛，机器和操作者都要先付出一点。',
+    hooks: {
+      onBattleStart: [{ op: 'loseHp', n: 5 }],
+    },
+    mod: { energyPlus: 1, blockPlus: 2 },
   },
 ];

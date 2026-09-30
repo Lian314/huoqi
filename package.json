@@ -6,10 +6,14 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js 5173",
-    "check": "node tools/validate.js && node tools/importcheck.js && node tools/uitest.js",
+    "check": "node tools/validate.js && node tools/importcheck.js && node tools/battletest.js && node tools/progresstest.js && node tools/contenttest.js && node tools/leveltest.js && node tools/uitest.js",
     "check:data": "node tools/validate.js",
     "check:imports": "node tools/importcheck.js",
-    "check:ui": "node tools/uitest.js"
+    "check:ui": "node tools/uitest.js",
+    "check:battle": "node tools/battletest.js",
+    "check:progress": "node tools/progresstest.js",
+    "check:content": "node tools/contenttest.js",
+    "check:levels": "node tools/leveltest.js"
   },
   "keywords": ["roguelike", "deckbuilder", "card-game", "management", "vanilla-js"],
   "license": "MIT"

@@ -4,6 +4,7 @@ import { CARD_MAP, ALL_CHARACTERS, ENEMY_MAP, RELIC_MAP, POTION_MAP, STARTER_REL
 import { triggerCurse } from '../systems/effects.js';
 import { generateMap } from '../systems/map.js';
 import { USABLE_FACILITIES, USABLE_UPGRADES } from '../data/facilities.js';
+import { expeditionEndAct } from '../data/regions.js';
 
 export function newRun(meta, characterId, opts = {}) {
   const seed = opts.seed ?? makeSeed();
@@ -26,6 +27,7 @@ export function newRun(meta, characterId, opts = {}) {
     charGlyph: ch.glyph,
     charColor: ch.color,
     mechanic: ch.mechanic,
+    rewardTags: ch.rewardTags || [],
 
     maxHp: ch.hp,
     hp: ch.hp,
@@ -36,8 +38,14 @@ export function newRun(meta, characterId, opts = {}) {
     potions: [],
     potionSlots: 3,
 
-    act: 1,
+    act: opts.act ?? 1,
+    endAct: opts.endAct ?? expeditionEndAct(opts.act ?? 1),
     map: null,
+    pendingAct: null,
+    keys: 0,
+    blessings: [],
+    siteStates: {},
+    areaHistory: [],
     currentNode: null,
     pendingBattle: null,
 
@@ -45,6 +53,8 @@ export function newRun(meta, characterId, opts = {}) {
       nodesVisited: 0, kills: 0, elites: 0, bosses: 0, cardsPlayed: 0,
       goldEarned: 0, damageDealt: 0, damageTaken: 0, turns: 0, potionsUsed: 0,
       cardsRemoved: 0, cardsAdded: 0, runs: 1,
+      eventsVisited: 0, shopsVisited: 0, restsVisited: 0,
+      sitesVisited: 0, regionsVisited: 0, keysFound: 0, keysSpent: 0, trialsCleared: 0, vaultsOpened: 0,
     },
     flags: {},
     carryStatuses: null,
@@ -75,7 +85,7 @@ export function newRun(meta, characterId, opts = {}) {
     if (e?.def?.tier === 'elite') run.stats.eliteKills = (run.stats.eliteKills || 0) + 1;
   };
 
-  run.map = generateMap(run, 1);
+  run.map = generateMap(run, run.act, opts.regionId);
   run.encounterCount = 0;
   return run;
 }
@@ -102,7 +112,7 @@ export function removeCardAt(run, index) {
 
 export function upgradeCardAt(run, index) {
   const c = run.deck[index];
-  if (!c || c.upgraded) return null;
+  if (!c || c.upgraded || !cardDef(c.id)?.upgrade) return null;
   c.upgraded = true;
   return c;
 }
@@ -112,11 +122,9 @@ export function cardDisplay(run, inst) {
   if (!def) return null;
   const c = { ...def };
   if (inst.upgraded && def.upgrade) {
-    c.cost = def.upgrade.cost ?? def.cost;
-    c.text = def.upgrade.text ?? def.text;
-    c.effects = def.upgrade.effects ?? def.effects;
-    c.exhaust = def.upgrade.exhaust ?? def.exhaust;
-    c.name = def.name + '+';
+    Object.assign(c, def.upgrade);
+    c.id = def.id;
+    c.name = def.upgrade.name ?? def.name + '+';
   }
   c.instanceUid = inst.uid;
   c.upgraded = !!inst.upgraded;
@@ -172,7 +180,9 @@ export function rollCardReward(run, count = 3, opts = {}) {
       return true;
     });
     if (!cands.length) continue;
-    const c = run.rng.pick(cands);
+    const c = run.rewardTags?.length
+      ? run.rng.weighted(cands, (entry) => entry.tags?.some((tag) => run.rewardTags.includes(tag)) ? 3 : 1)
+      : run.rng.pick(cands);
     const key = c.id;
     if (seen.has(key) && cands.length > 1) { if (run.rng.chance(0.6)) continue; }
     seen.add(key);

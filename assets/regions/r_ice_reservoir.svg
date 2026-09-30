@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="断流冰库的闸坝、断裂输水管与冰面">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="M330 165h670v75H292z" fill="#315f64"/>
+  <path d="M482 85h91v93h-91zm276-16h155v115H758z" fill="#7f9990"/>
+  <path d="M576 133h181v32H576zm-17-67h219v25H559z" fill="#a4b8a7"/>
+  <path d="M616 89h17v80h-17zm55 0h17v80h-17zm55 0h17v80h-17z" fill="#697f73"/>
+  <path d="M498 109h57v57h-57zm283-21h112v73H781z" fill="#214649"/>
+  <path d="M793 115h87m-87 27h87M513 111v54m24-54v54" stroke="#88c3bb" stroke-width="3"/>
+  <path d="M440 175V58h103V36h197v31H601v42h44m68 0h52v65" stroke="#c6c8a3" stroke-width="15" fill="none"/>
+  <path d="m648 97-7 10 11 14m48-26 10 13-12 13" stroke="#72a4a2" stroke-width="4" fill="none"/>
+  <path d="M440 67v29m98-54h31m71-6v31m53-31v31" stroke="#7d8d79" stroke-width="4"/>
+  <path d="m522 191 101-19 178 13 87 42-228 13-138-26z" fill="#b9d5cc"/>
+  <path d="m609 182 37 22-9 21 71-10 18-29m-15 30 49 16m-101-28-80-4" stroke="#648f91" stroke-width="3" fill="none"/>
+  <path d="M390 216h100m397-32h84m-81 53h80" stroke="#92b8ae" stroke-width="3"/>
+</svg>

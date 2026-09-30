@@ -2,10 +2,10 @@
 // 纯数据文件：无 import、无函数、无计算属性，全部字面量。
 // op 名称 / 字段名严格遵循 docs/DATA_SPEC.md。
 // target：'self' 直接生效 / 'target' 战斗中指定一个敌人 / 'none' 无条件。
-// rarity 分布：common 10 / uncommon 9 / rare 5
+// rarity 分布：common 15 / uncommon 14 / rare 7
 
 export const POTIONS = [
-  // ---------- common 10 ----------
+  // ---------- common 15 ----------
   {
     id: 'p_warm_brandy',
     name: '温麦酒',
@@ -110,7 +110,58 @@ export const POTIONS = [
     effects: [{ op: 'debuff', s: 'poison', v: 5, t: 'target' }],
   },
 
-  // ---------- uncommon 9 ----------
+  {
+    id: 'p_quay_salve',
+    name: '码头膏',
+    rarity: 'common',
+    glyph: '🩹',
+    color: '#76b8ae',
+    target: 'self',
+    desc: '回复 8 点生命，并获得 12 金币。可在战斗外使用。',
+    effects: [{ op: 'heal', n: 8 }, { op: 'gold', n: 12 }],
+  },
+  {
+    id: 'p_rivet_suspension',
+    name: '铆钉悬液',
+    rarity: 'common',
+    glyph: '🔩',
+    color: '#a6adb4',
+    target: 'self',
+    desc: '获得 10 点格挡和 1 层碎裂。',
+    effects: [{ op: 'block', v: 10 }, { op: 'buff', s: 'splinter', v: 1, t: 'self' }],
+  },
+  {
+    id: 'p_soot_vial',
+    name: '煤烟瓶',
+    rarity: 'common',
+    glyph: '🌫️',
+    color: '#7c868c',
+    target: 'target',
+    desc: '使一个敌人获得 2 层虚弱与 2 层束缚。',
+    effects: [{ op: 'debuff', s: 'weak', v: 2, t: 'target' }, { op: 'debuff', s: 'bind', v: 2, t: 'target' }],
+  },
+  {
+    id: 'p_pale_wick',
+    name: '白灯露',
+    rarity: 'common',
+    glyph: '🕯️',
+    color: '#e1d885',
+    target: 'self',
+    desc: '获得 2 层专注，并抽 1 张牌。未使用的专注在回合结束时衰减。',
+    effects: [{ op: 'buff', s: 'focus', v: 2, t: 'self' }, { op: 'draw', n: 1 }],
+  },
+  {
+    id: 'p_brass_filings',
+    name: '铜屑饮',
+    rarity: 'common',
+    glyph: '🟨',
+    color: '#d0b75a',
+    target: 'target',
+    desc: '对一个敌人造成 12 点基础攻击伤害，并施加 1 层标记。',
+    effects: [{ op: 'damage', v: 12, t: 'target' }, { op: 'debuff', s: 'mark', v: 1, t: 'target' }],
+  },
+
+  // ---------- uncommon 14 ----------
   {
     id: 'p_vital_salts',
     name: '活力盐',
@@ -218,7 +269,58 @@ export const POTIONS = [
     ],
   },
 
-  // ---------- rare 5 ----------
+  {
+    id: 'p_marrow_cordial',
+    name: '髓酿',
+    rarity: 'uncommon',
+    glyph: '🦴',
+    color: '#d4c4ac',
+    target: 'self',
+    desc: '最大生命与当前生命 +3。可在战斗外使用，最大生命提升持续本次远征。',
+    effects: [{ op: 'maxHp', n: 3 }],
+  },
+  {
+    id: 'p_salt_shield',
+    name: '盐壳',
+    rarity: 'uncommon',
+    glyph: '🧂',
+    color: '#c8e2df',
+    target: 'self',
+    desc: '获得 2 层神器和 4 点格挡。未消耗的神器在回合结束时衰减。',
+    effects: [{ op: 'buff', s: 'artifact', v: 2, t: 'self' }, { op: 'block', v: 4 }],
+  },
+  {
+    id: 'p_cinder_screen',
+    name: '灰焰幕',
+    rarity: 'uncommon',
+    glyph: '🔥',
+    color: '#cb7962',
+    target: 'none',
+    desc: '对所有敌人施加 2 层虚弱与 1 层灼烧。',
+    effects: [{ op: 'debuff', s: 'weak', v: 2, t: 'allEnemies' }, { op: 'debuff', s: 'burn', v: 1, t: 'allEnemies' }],
+  },
+  {
+    id: 'p_oath_cordial',
+    name: '誓血酒',
+    rarity: 'uncommon',
+    glyph: '🩸',
+    color: '#bc536a',
+    target: 'self',
+    desc: '回复 4 点生命，获得 2 层坚毅。致命伤害消耗 1 层并保留 1 点生命；每回合结束衰减 1 层。',
+    effects: [{ op: 'heal', n: 4 }, { op: 'buff', s: 'resolve', v: 2, t: 'self' }],
+  },
+  {
+    id: 'p_moonlit_ink',
+    name: '月墨',
+    rarity: 'uncommon',
+    glyph: '🖋️',
+    color: '#8d9ed1',
+    target: 'target',
+    desc: '使一个敌人获得 3 层标记与 3 层束缚。',
+    effects: [{ op: 'debuff', s: 'mark', v: 3, t: 'target' }, { op: 'debuff', s: 'bind', v: 3, t: 'target' }],
+  },
+
+  // ---------- rare 7 ----------
   {
     id: 'p_black_bile',
     name: '黑胆汁',
@@ -284,5 +386,25 @@ export const POTIONS = [
       { op: 'addHand', card: 'c_bash', n: 2 },
       { op: 'energy', n: 1 },
     ],
+  },
+  {
+    id: 'p_tempering_oil',
+    name: '淬牌油',
+    rarity: 'rare',
+    glyph: '⚗️',
+    color: '#e0a959',
+    target: 'self',
+    desc: '随机永久升级牌组中 1 张尚未升级的牌。可在战斗外使用。',
+    effects: [{ op: 'upgradeCard', n: 1 }],
+  },
+  {
+    id: 'p_anchor_essence',
+    name: '锚髓',
+    rarity: 'rare',
+    glyph: '⚓',
+    color: '#74a3a2',
+    target: 'self',
+    desc: '获得 14 点格挡与壁垒，本场战斗的格挡可跨回合保留。',
+    effects: [{ op: 'block', v: 14 }, { op: 'buff', s: 'barricade', v: 1, t: 'self' }],
   },
 ];

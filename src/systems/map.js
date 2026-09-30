@@ -1,5 +1,8 @@
 // ============ 地窟地图生成 ============
 import { RNG } from '../core/rng.js';
+import { ALL_EVENTS } from '../data/index.js';
+import { CHAPTERS, regionById, regionsOf } from '../data/regions.js';
+import { SITE_TYPES } from '../data/sites.js';
 
 const NODE_KINDS = {
   battle: { name: '遭遇', glyph: '⚔', color: '#e06c6c', danger: 1 },
@@ -10,21 +13,20 @@ const NODE_KINDS = {
   rest: { name: '篝火', glyph: '▲', color: '#7bed9f', danger: 0 },
   treasure: { name: '宝库', glyph: '◆', color: '#feca57', danger: 0 },
   boss: { name: '首领', glyph: '☠', color: '#ff4757', danger: 3 },
+  ...Object.fromEntries(Object.entries(SITE_TYPES).map(([type, def]) => [type, { ...def, danger: ['trial', 'vault'].includes(type) ? 2 : 0 }])),
 };
 
 export { NODE_KINDS };
 
 export function nodeInfo(kind) { return NODE_KINDS[kind] || NODE_KINDS.battle; }
 
-export const ACT_CONFIG = {
-  1: { rows: 15, cols: 4, eliteFrom: 3, shopCount: 2, restCount: 1, eventCount: 3 },
-  2: { rows: 18, cols: 4, eliteFrom: 3, shopCount: 2, restCount: 1, eventCount: 3 },
-  3: { rows: 20, cols: 5, eliteFrom: 2, shopCount: 2, restCount: 1, eventCount: 4 },
-};
+export const ACT_CONFIG = CHAPTERS;
 
-export function generateMap(run, act) {
+export function generateMap(run, act, requestedRegionId = null) {
   const cfg = ACT_CONFIG[act] || ACT_CONFIG[1];
   const rng = run.rng;
+  const regions = regionsOf(act);
+  const region = regions.find((entry) => entry.id === requestedRegionId) || rng.pick(regions);
   const rows = cfg.rows;
   const cols = cfg.cols;
   const grid = [];
@@ -53,13 +55,14 @@ export function generateMap(run, act) {
       const options = [];
       for (let k = Math.max(0, c - 1); k <= Math.min(nxt.length - 1, c + 1); k++) options.push(k);
       if (!options.length) options.push(Math.min(c, nxt.length - 1));
-      const forced = (c === 0 && r === 0) || (c === cur.length - 1 && r === rows - 2);
-      if (forced) node.links = [options[0]];
-      else {
-        const picked = rng.sample(options, rng.int(1, Math.min(3, options.length)));
-        node.links = picked.sort((a, b) => a - b);
+      {
+        const picked = rng.sample(options, rng.int(Math.min(2, options.length), Math.min(3, options.length)));
+        for (const k of [Math.min(c, nxt.length - 1), Math.min(c + 1, nxt.length - 1)]) {
+          if (!picked.includes(k)) picked.push(k);
+        }
+        node.links = picked.sort((a, b) => a - b).map((k) => nxt[k].id);
         // 保证不出现断头路：至少一个后继
-        if (!node.links.length) node.links = [options[0]];
+        if (!node.links.length) node.links = [nxt[options[0]].id];
       }
     }
   }
@@ -68,14 +71,14 @@ export function generateMap(run, act) {
   assignTypes(grid, cfg, rng, rows);
 
   const map = {
-    act, rows, cols, grid, cfg,
+    act, rows, cols, grid, cfg, regionId: region?.id || null,
     currentId: null,
     visited: [],
     complete: false,
   };
-  for (const row of grid) for (const n of row) n.state = 'available';
   // 起始行只有 1 个入口可选
   grid[0].forEach((n, i) => { n.state = i === 0 ? 'available' : 'hidden'; });
+  for (const row of grid) for (const node of row) configureNode(run, map, node);
   return map;
 }
 
@@ -91,59 +94,39 @@ function assignTypes(grid, cfg, rng, rows) {
   grid[restRow].forEach((n) => { n.type = 'rest'; });
   grid[rows - 1].forEach((n) => { n.type = 'boss'; });
 
-  // 随机行预算
-  let elites = 2 + (rows > 16 ? 1 : 0);
-  let shops = cfg.shopCount;
-  let events = cfg.eventCount;
-  let rests = cfg.restCount - 1; // 已用掉一个
-  const midRows = [];
-  for (let r = 1; r < treasureRow; r++) midRows.push(r);
-
-  // 保证前 3 行全是战斗/精英
-  for (let r = 1; r <= Math.min(3, treasureRow - 1); r++) {
-    for (const n of grid[r]) n.type = r >= cfg.eliteFrom && elites > 0 && rng.chance(0.14) ? (elites--, 'elite') : 'battle';
-  }
-
-  // 商店：固定分散在中间
-  const shopRows = pickSpreadRows(midRows.filter((r) => r > 3), shops, rng);
-  for (const r of shopRows) {
-    for (const n of grid[r]) { n.type = 'shop'; }
-  }
-  shops -= shopRows.length;
-
-  // 剩余行铺满
-  for (let r = 1; r < treasureRow; r++) {
-    for (const n of grid[r]) {
-      if (n.type) continue;
-      const roll = rng.next();
-      if (r >= cfg.eliteFrom && elites > 0 && roll < 0.12) { n.type = 'elite'; elites--; }
-      else if (events > 0 && roll < 0.26) { n.type = 'event'; events--; }
-      else if (rests > 0 && roll < 0.31) { n.type = 'rest'; rests--; }
-      else n.type = 'battle';
-    }
-  }
-  // 兜底：没有空节点
-  for (let r = 1; r < rows - 1; r++) for (const n of grid[r]) if (!n.type) n.type = 'battle';
-  // 每行不能同时出现两个商店
-  for (let r = 0; r < rows; r++) {
-    const shopsInRow = grid[r].filter((n) => n.type === 'shop');
-    if (shopsInRow.length > 1) for (let i = 1; i < shopsInRow.length; i++) shopsInRow[i].type = 'battle';
+  for (let r = 1; r < treasureRow; r++) for (const node of grid[r]) node.type = 'battle';
+  const midRows = rng.shuffle(Array.from({ length: treasureRow - 4 }, (_, i) => i + 4));
+  const kinds = [
+    ...Array(cfg.shopCount).fill('shop'), ...Object.keys(SITE_TYPES),
+    ...Array(cfg.eventCount).fill('event'), ...Array(rows > 16 ? 3 : 2).fill('elite'),
+  ];
+  for (let i = 0; i < kinds.length; i++) {
+    const row = grid[midRows[i % midRows.length]];
+    const candidates = row.filter((node) => node.type === 'battle');
+    if (candidates.length) rng.pick(candidates).type = kinds[i];
   }
 }
 
-function pickSpreadRows(rows, count, rng) {
-  if (count <= 0 || rows.length === 0) return [];
-  const span = rows.length;
-  const step = span / count;
-  const out = [];
-  for (let i = 0; i < count; i++) {
-    let r = Math.floor(step * i + step / 2);
-    r = Math.max(1, Math.min(rows.length - 1, r + rng.int(-1, 1)));
-    let tries = 0;
-    while (out.includes(r) && tries < 8) { r = Math.max(1, Math.min(rows.length - 1, r + 1)); tries++; }
-    if (!out.includes(r)) out.push(r);
+export function configureNode(run, map, node) {
+  const region = regionById(map.regionId);
+  if (!region) return;
+  const rng = new RNG((run.seed ^ map.act * 4099 ^ node.row * 7919 ^ node.col * 104729) >>> 0);
+  delete node.encounterId;
+  delete node.eventId;
+  delete node.waves;
+  const tier = { battle: 'normal', sentry: 'sentry', elite: 'elite', boss: 'boss', vault: 'elite' }[node.type];
+  if (tier) {
+    const pool = region.encounters.filter((entry) => entry.tier === tier);
+    node.encounterId = rng.weighted(pool, (entry) => entry.weight || 1)?.id;
+  } else if (node.type === 'trial') {
+    node.waves = rng.sample(region.encounters.filter((entry) => entry.tier === 'normal'), 2).map((entry) => entry.id);
+  } else if (node.type === 'event') {
+    const used = new Set(map.grid.flat().filter((other) => other.id !== node.id).map((other) => other.eventId));
+    const pool = ALL_EVENTS.filter((entry) => (!entry.act || entry.act === map.act)
+      && (!entry.regionId || entry.regionId === region.id));
+    const fresh = pool.filter((entry) => !used.has(entry.id));
+    node.eventId = rng.weighted(fresh.length ? fresh : pool, (entry) => entry.regionId === region.id ? 3 : 1)?.id;
   }
-  return out.sort((a, b) => a - b);
 }
 
 // ---------- 查询 ----------
@@ -155,29 +138,33 @@ export function findNode(map, id) {
 }
 
 export function entryNodes(map) {
-  return map ? map.grid[0].filter((n) => n.state !== 'done') : [];
+  return map ? map.grid[0].filter((n) => n.state === 'available' && !map.visited.includes(n.id)) : [];
 }
 
 export function reachableNodes(map) {
   if (!map) return [];
   if (!map.currentId) return entryNodes(map);
   const cur = findNode(map, map.currentId);
-  if (!cur) return entryNodes(map);
-  return cur.links.map((c) => findNode(map, c)).filter(Boolean).filter((n) => n.state !== 'done');
+  if (!cur) return [];
+  return cur.links.map((id) => findNode(map, id)).filter((n) =>
+    n && n.row === cur.row + 1 && n.state === 'available' && !map.visited.includes(n.id));
 }
 
 export function enterNode(run, nodeId) {
-  const map = run.map;
-  const node = findNode(map, nodeId);
+  const map = run?.map;
+  const options = reachableNodes(map);
+  const node = options.find((n) => n.id === nodeId);
   if (!node) return null;
-  if (map.currentId) {
-    const cur = findNode(map, map.currentId);
-    if (cur && !cur.links.includes(nodeId)) return null;
-  }
+  for (const option of options) if (option !== node) option.state = 'locked';
   node.state = 'done';
   map.currentId = nodeId;
   map.visited.push(nodeId);
   run.stats.nodesVisited += 1;
+  for (const id of node.links) {
+    const next = findNode(map, id);
+    if (next && next.row === node.row + 1 && next.state !== 'done' && !map.visited.includes(id)) next.state = 'available';
+  }
+  map.complete = isMapComplete(map);
   return node;
 }
 
@@ -198,7 +185,7 @@ export function actProgress(map) {
 export function farthestReachable(map) {
   if (!map) return { row: 0, col: 0 };
   let best = { row: 0, col: 0 };
-  const start = map.currentId ? [map.currentId] : map.grid[0].map((n) => n.id);
+  const start = map.currentId ? [map.currentId] : entryNodes(map).map((n) => n.id);
   const seen = new Set();
   const stack = start.slice();
   while (stack.length) {

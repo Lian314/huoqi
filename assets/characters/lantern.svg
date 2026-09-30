@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img">
+  <title>The Lantern Keeper</title>
+  <path fill="#13252a" d="M0 0h256v256H0z"/>
+  <path fill="#326566" d="m0 157 66-76 55 95 74-82 61 73v89H0z"/>
+  <path fill="#324b50" d="m30 256 22-80 30-26 2-62q4-65 49-65t50 65l3 64 28 35 17 69z"/>
+  <path fill="#c4baa2" d="M95 83q6-29 37-29t34 29l-7 54-27 30-31-30z"/>
+  <path fill="#80968c" d="m102 127 60 1-31 38z"/>
+  <path fill="#203437" d="m82 87 18-43 37-14 37 26 12 40-27-17-20-29-17 30z"/>
+  <path stroke="#314c52" stroke-width="5" d="M108 101h16m20 0h14"/>
+  <path fill="#d3c59b" d="m128 100 5 23h-13z"/>
+  <path fill="#85a8a0" d="m72 155 59 23 60-21-44 51H94z"/>
+  <path fill="#487978" d="m51 192 30-10 11 74H35zm136-10 20 20 14 54h-44z"/>
+  <path fill="#e3c989" d="m149 204 10-5 13 18-11 13-16-8z"/>
+  <path fill="none" stroke="#c9d9bc" stroke-width="6" d="M155 215v-27q0-11 12-11t12 11v25"/>
+  <path fill="#b9c9aa" d="m142 213 50-1 9 38h-67z"/>
+  <path fill="#e9d37f" d="m150 218 14-1v27h-18zm20-1h14l7 27h-21z"/>
+  <path fill="#334c51" d="M129 248h77v8h-77z"/>
+  <path fill="#c4d3ba" d="m115 185 16 4 17-4-17 22z"/>
+</svg>

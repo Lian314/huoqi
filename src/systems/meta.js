@@ -29,6 +29,9 @@ export function newMeta() {
     stats: { runs: 0, wins: 0, deaths: 0, bestNight: 0, totalKills: 0, totalGold: 0, cardsPlayed: 0, bossKills: 0 },
     flags: { tutorialDone: false, firstRun: true },
     lastCharacter: null,
+    pendingResult: null,
+    ending: null,
+    commissions: { night: 0, offers: [], selectedId: null, resolved: false, reputation: 0, completed: [], lastResult: null },
   };
 }
 
@@ -47,7 +50,9 @@ export function loadMeta() {
     if (!m || m.version !== 1) return newMeta();
     // 兼容
     const base = newMeta();
-    const merged = { ...base, ...m, facilities: { ...base.facilities, ...(m.facilities || {}) }, upgrades: { ...(m.upgrades || {}) }, stats: { ...base.stats, ...(m.stats || {}) }, flags: { ...base.flags, ...(m.flags || {}) } };
+    const merged = { ...base, ...m, facilities: { ...base.facilities, ...(m.facilities || {}) }, upgrades: { ...(m.upgrades || {}) }, unlocks: { ...base.unlocks, ...(m.unlocks || {}) }, stats: { ...base.stats, ...(m.stats || {}) }, flags: { ...base.flags, ...(m.flags || {}) }, commissions: { ...base.commissions, ...(m.commissions || {}) } };
+    if (merged.hearts <= 0) merged.ending = 'lost';
+    else if (!merged.ending && merged.night > MAX_NIGHT) merged.ending = 'won';
     return reviveSets(merged);
   } catch (e) {
     console.warn('[meta] 存档损坏，重建', e);
@@ -98,26 +103,30 @@ export function bonuses(meta) {
     relicFind: 0, eliteBonus: 0, potionPower: 0, runEndHealPct: 0, keepGold: 0,
     tideWard: 0, campfireRemove: false, forgeUpgrade: 0, restHeal: false,
     dealChance: 0, bossWard: false, insurance: 0,
+    commissionChoices: 0, commissionGoldPlus: 0,
   };
   // 设施
   for (const f of FACILITIES) {
     const lv = meta.facilities[f.id] || 0;
     if (lv <= 0) continue;
     if (f.effects) {
-      if (f.effects.incomeFlat) b.incomeFlat += f.income[lv] || 0;
+      if (f.effects.incomeFlat) b.incomeFlat += f.income[lv - 1] || 0;
       if (f.effects.incomePct) b.incomePct += f.effects.incomePct;
-      if (f.effects.potionSlots) b.potionSlots += f.effects.potionSlots;
-      if (f.effects.mapReveal) b.mapReveal += f.effects.mapReveal;
+      if (f.effects.potionSlots) b.potionSlots += f.effects.potionSlots * lv;
+      if (f.effects.mapReveal) b.mapReveal += f.effects.mapReveal * lv;
       if (f.effects.shopDiscount) b.shopDiscount += f.effects.shopDiscount;
       if (f.effects.shopCards) b.shopCards += f.effects.shopCards;
-      if (f.effects.relicChoice) b.relicChoice += f.effects.relicChoice;
-      if (f.effects.cardChoice) b.cardChoice += f.effects.cardChoice;
+      if (f.effects.relicChoice) b.relicChoice += f.effects.relicChoice * lv;
+      if (f.effects.cardChoice) b.cardChoice += f.effects.cardChoice * lv;
       if (f.effects.keepGold) b.keepGold = Math.max(b.keepGold, f.effects.keepGold);
-      if (f.effects.tideWard) b.tideWard += f.effects.tideWard;
+      if (f.effects.tideWard) b.tideWard += f.effects.tideWard * lv;
       if (f.effects.campfireRemove) b.campfireRemove = true;
       if (f.effects.forgeUpgrade) b.forgeUpgrade = Math.max(b.forgeUpgrade, f.effects.forgeUpgrade);
       if (f.effects.restHeal) b.restHeal = true;
       if (f.effects.dealChance) b.dealChance += f.effects.dealChance;
+      for (const key of ['gold', 'maxHp', 'startCards', 'startPotions', 'damagePlus', 'drawPlus', 'firstTurnDrawPlus', 'potionPower', 'commissionChoices', 'commissionGoldPlus']) {
+        if (f.effects[key]) b[key] += f.effects[key] * lv;
+      }
     }
   }
   // 员工
@@ -136,6 +145,9 @@ export function bonuses(meta) {
     if (m.startCards) b.startCards += m.startCards;
     if (m.relicFind) b.relicFind += m.relicFind;
     if (m.runEndHealPct) b.runEndHealPct += m.runEndHealPct;
+    for (const key of ['gold', 'maxHp', 'potionSlots', 'startPotions', 'drawPlus', 'commissionChoices', 'commissionGoldPlus']) {
+      if (m[key]) b[key] += m[key];
+    }
   }
   // 升级
   for (const [uid, lv] of Object.entries(meta.upgrades || {})) {
@@ -168,7 +180,7 @@ export function nightlyIncome(meta) {
   let base = 0;
   for (const f of FACILITIES) {
     const lv = meta.facilities[f.id] || 0;
-    if (lv > 0) base += f.income[lv] || 0;
+    if (lv > 0) base += f.income[lv - 1] || 0;
   }
   const staffFlat = (meta.staff || []).reduce((a, sid) => a + (STAFF_MAP[sid]?.wage || 0), 0);
   const b = bonuses(meta);
@@ -249,12 +261,13 @@ export function unlockItem(meta, kind, id, cost) {
 }
 
 export function facilityDesc(f, lv) {
-  const income = f.income[lv] || 0;
-  const pct = Math.round((f.effects?.shopDiscount || 0) * 100);
+  const income = lv > 0 ? f.income[lv - 1] || 0 : 0;
+  const pct = Math.round((f.effects?.shopDiscount || f.effects?.incomePct || f.effects?.keepGold || 0) * 100);
   const keep = Math.round((f.effects?.keepGold || 0) * 100);
   return f.desc
     .replace('{income}', income)
     .replace('{lv}', lv)
     .replace('{pct}', pct)
-    .replace('{keep}', keep);
+    .replace('{keep}', keep)
+    .replace('{commissionGold}', (f.effects?.commissionGoldPlus || 0) * lv);
 }

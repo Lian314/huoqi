@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="锈潮码头的起重吊架、铁桥与灯塔">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="M330 138h670v102H280z" fill="#20413b"/>
+  <path d="M440 154h105v-52h44v52h74v-83h55v83h104v-42h54v42h124v86H440z" fill="#314b42"/>
+  <path d="M400 184h600v16H400zM468 200v40m109-40v40m109-40v40m109-40v40m109-40v40" stroke="#758772" stroke-width="6" fill="#6d7056"/>
+  <path d="M574 180V54l91-24 95 46-15 13-80-39-70 20v110z" fill="#b9804f"/>
+  <path d="m594 68 147 110m-167-51 45 51" stroke="#633f33" stroke-width="5"/>
+  <path d="M735 82v61m-11 0h22l-3 13-14 5-7-8" stroke="#dbc595" stroke-width="4" fill="none"/>
+  <rect x="620" y="154" width="45" height="30" fill="#697e70" stroke="#a3b3a2" stroke-width="2"/>
+  <rect x="672" y="161" width="57" height="23" fill="#b16d48" stroke="#ddaa6f" stroke-width="2"/>
+  <path d="M633 158v21m11-21v21m42-14v15m13-15v15" stroke="#263d38" stroke-width="3"/>
+  <path d="M860 184V66l19-25 20 25v118z" fill="#b5b299"/>
+  <path d="M856 66h47v16h-47zM865 88h28v18h-28z" fill="#ebc874"/>
+  <path d="m850 66 28-30 30 30z" fill="#647568"/>
+  <path d="M488 207h94m38 13h105m35-10h97m31 20h78M385 230h79" stroke="#67958a" stroke-width="3"/>
+  <path d="M938 134v45m-11-9h23m-26-8q-1 27 15 27t15-27" stroke="#c29963" stroke-width="4" fill="none"/>
+</svg>

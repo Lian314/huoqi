@@ -1,10 +1,11 @@
 // ============ 敌人数据 ============
-// 分布：每幕 10 普通 + 3 精英 + 1 Boss，另加 2 个 act1 前哨杂兵 = 44
-// 规则见 docs/DATA_SPEC.md：招式 2~4 个；dmg 必填且与 effects 数值一致；
+// 基础 68 敌人；港区与深层区域模块追加专属敌人。
+// 规则见 docs/DATA_SPEC.md：dmg 记录基础总伤害，意图由 effects 实时推演；
 // 精英/Boss 用 requireHpBelow 切阶段；Boss 用 next 连招。
-// 纯数据：无 import、无函数、无计算。
+import { HARBOR_ENEMIES } from './enemies.harbor.js';
+import { DEPTH_ENEMIES } from './enemies.depths.js';
 
-export const ENEMIES = [
+const BASE_ENEMIES = [
 
   // ---------- ACT 1 · 前哨杂兵（教学用，hp ≤ 14）----------
 
@@ -519,18 +520,23 @@ export const ENEMIES = [
     lore:'它向熔炉祷告，熔炉偶尔也会应一声。',
     moves:[
       { id:'e_iron_priest_prayer', name:'祷词', intent:'debuff', dmg:0, weight:2,
-        tell:'它在你的名字上画了一个圈。',
+        next:'e_iron_priest_crosier',
+        tell:'它在你的名字上画圈，施加标记和虚弱，下一回合挥出炉杖。',
         effects:[
           {op:'debuff', s:'mark', v:2, t:'all'},
           {op:'debuff', s:'weak', v:1, t:'all'}
         ] },
       { id:'e_iron_priest_bless', name:'铸铁祝祷', intent:'buff', dmg:0, weight:2,
-        next:'e_iron_priest_prayer',
-        tell:'熔化的铅在它掌心聚成了一个十字。',
+        once:true, next:'e_iron_priest_crosier',
+        tell:'铅在掌心凝成十字，只会祝祷一次，获得 3 层金属化，下一回合挥杖。',
         effects:[{op:'buff', s:'metallicize', v:3, t:'self'}] },
       { id:'e_iron_priest_coffer', name:'铁匣合拢', intent:'defend', dmg:0, weight:1,
-        tell:'祷告箱的四片盖板扣死了。',
-        effects:[{op:'block', v:12}] }
+        next:'e_iron_priest_crosier',
+        tell:'祷告箱扣死，获得 12 点格挡，下一回合打开盖板挥出炉杖。',
+        effects:[{op:'block', v:12}] },
+      { id:'e_iron_priest_crosier', name:'炉杖敲击', intent:'attack', dmg:9, weight:3,
+        tell:'炉杖已经举起，将造成 9 点基础伤害并消耗身上的 3 层金属化。',
+        effects:[{op:'damage', v:9}, {op:'buff', s:'metallicize', v:-3, t:'self'}] }
     ]
   },
 
@@ -1158,6 +1164,601 @@ export const ENEMIES = [
           {op:'debuff', s:'siege', v:4, t:'all'}
         ] }
     ]
+  },
+
+  // ---------- ACT 1 · 码头蒸汽工会 ----------
+
+  { id:'e_dock_riveter', name:'码头铆钉工', act:1, tier:'normal',
+    hp:[22,28], gold:[8,14], glyph:'铆', color:'#b8976b', size:'normal',
+    lore:'他的工单上写着补船，船沉了以后，工单只剩下补人。',
+    moves:[
+      { id:'e_dock_riveter_nails', name:'双钉齐射', intent:'attack', dmg:6, weight:3,
+        next:'e_dock_riveter_reload',
+        tell:'两枚铆钉同时上膛，将连续射击两次，随后必须装填。',
+        effects:[{op:'repeat', n:2, then:[{op:'damage', v:3}]}] },
+      { id:'e_dock_riveter_reload', name:'装填钉匣', intent:'defend', dmg:0, weight:1,
+        tell:'他低头补钉，只会获得 6 点格挡。',
+        effects:[{op:'block', v:6}] },
+      { id:'e_dock_riveter_sight', name:'打上定位钉', intent:'debuff', dmg:0, weight:1,
+        once:true, next:'e_dock_riveter_nails',
+        tell:'准星停在你的护甲缺口，留下 1 层标记，下一回合双钉齐射。',
+        effects:[{op:'debuff', s:'mark', v:1, t:'all'}] }
+    ]
+  },
+
+  { id:'e_bilge_lamplighter', name:'舱底点灯人', act:1, tier:'normal',
+    hp:[18,24], gold:[7,12], glyph:'灯', color:'#dbab60', size:'normal',
+    lore:'他只点没有人看守的灯。灯亮的时候，舱底一定有人。',
+    moves:[
+      { id:'e_bilge_lamplighter_flare', name:'倾倒灯火', intent:'attackDebuff', dmg:4, weight:2,
+        once:true, next:'e_bilge_lamplighter_cover',
+        tell:'灯油从提灯口溢出；本次攻击会附加 1 层灼烧，之后他会护住灯芯。',
+        effects:[{op:'damage', v:4}, {op:'debuff', s:'burn', v:1, t:'all'}] },
+      { id:'e_bilge_lamplighter_staff', name:'灯杆横扫', intent:'attack', dmg:6, weight:3,
+        tell:'他横握灯杆，准备一次 6 点伤害的扫击。',
+        effects:[{op:'damage', v:6}] },
+      { id:'e_bilge_lamplighter_cover', name:'护住灯芯', intent:'defend', dmg:0, weight:2,
+        tell:'他把灯藏进外套，只获得 5 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:5}] }
+    ]
+  },
+
+  { id:'e_chain_tollman', name:'铁链收税人', act:1, tier:'normal',
+    hp:[30,36], gold:[10,16], glyph:'链', color:'#829690', size:'normal',
+    lore:'没有钱就留一节指骨，桥下的链条已经很长了。',
+    moves:[
+      { id:'e_chain_tollman_hook', name:'税钩', intent:'attack', dmg:8, weight:3,
+        next:'e_chain_tollman_slack',
+        tell:'铁钩已拉到尽头，将造成 8 点伤害，随后必须收链。',
+        effects:[{op:'damage', v:8}] },
+      { id:'e_chain_tollman_bind', name:'缠住护腕', intent:'debuff', dmg:0, weight:2,
+        requireTurn:[2], next:'e_chain_tollman_hook',
+        tell:'链圈瞄准你的护腕；施加 2 层束缚后，下一回合拉动税钩。',
+        effects:[{op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_chain_tollman_slack', name:'收回松链', intent:'defend', dmg:0, weight:1,
+        tell:'他正把链条绕回腰间，只获得 4 点格挡。',
+        effects:[{op:'block', v:4}] }
+    ]
+  },
+
+  { id:'e_pressure_runner', name:'背炉跑腿', act:1, tier:'normal',
+    hp:[20,26], gold:[8,13], glyph:'汽', color:'#87b9a7', size:'normal',
+    lore:'背上的小锅炉替他呼吸，也替他决定什么时候该冲出去。',
+    moves:[
+      { id:'e_pressure_runner_charge', name:'拧紧背炉', intent:'buff', dmg:0, weight:2,
+        once:true, next:'e_pressure_runner_dash',
+        tell:'背炉开始积压蒸汽，获得 2 点力量，下一回合撞来。',
+        effects:[{op:'buff', s:'strength', v:2, t:'self'}] },
+      { id:'e_pressure_runner_dash', name:'蒸汽冲撞', intent:'attack', dmg:8, weight:0,
+        next:'e_pressure_runner_vent',
+        tell:'蒸汽喷口朝向地面，准备一次冲撞；撞完必定泄压。',
+        effects:[{op:'damage', v:8}] },
+      { id:'e_pressure_runner_vent', name:'背炉泄压', intent:'defend', dmg:0, weight:1,
+        tell:'他弯腰放汽，失去 2 点力量，只获得 3 点格挡。',
+        effects:[{op:'buff', s:'strength', v:-2, t:'self'}, {op:'block', v:3}] },
+      { id:'e_pressure_runner_pipe', name:'管钳敲打', intent:'attack', dmg:5, weight:3,
+        tell:'炉压不足，他只会用管钳造成 5 点基础伤害。',
+        effects:[{op:'damage', v:5}] }
+    ]
+  },
+
+  { id:'e_dock_pressure_master', name:'工会压力监工', act:1, tier:'elite',
+    hp:[64,76], gold:[32,46], glyph:'压', color:'#a99c79', size:'large',
+    lore:'他每次点名都先检查阀门，漏掉的名字会被计入炉压。',
+    moves:[
+      { id:'e_dock_pressure_master_load', name:'加压检查', intent:'defend', dmg:0, weight:3,
+        next:'e_dock_pressure_master_burst',
+        tell:'压力表接近红线，获得 12 点格挡，下一回合施放重锤。',
+        effects:[{op:'block', v:12}] },
+      { id:'e_dock_pressure_master_burst', name:'压力重锤', intent:'attack', dmg:14, weight:0,
+        next:'e_dock_pressure_master_vent',
+        tell:'重锤已经锁定，造成 14 点伤害后必定开阀泄压。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_dock_pressure_master_vent', name:'打开侧阀', intent:'defend', dmg:0, weight:1,
+        tell:'侧阀暴露，监工获得 4 点格挡和 2 层易伤；这是进攻窗口。',
+        effects:[{op:'block', v:4}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] },
+      { id:'e_dock_pressure_master_hook', name:'拖拽工钩', intent:'attack', dmg:8, weight:2,
+        tell:'他用工钩试探，只会造成 8 点伤害。',
+        effects:[{op:'damage', v:8}] },
+      { id:'e_dock_pressure_master_redline', name:'红线双冲', intent:'attack', dmg:12, weight:1,
+        requireHpBelow:0.5, next:'e_dock_pressure_master_vent',
+        tell:'压力表碎了，将连续造成两次 6 点伤害，然后泄压。',
+        effects:[{op:'repeat', n:2, then:[{op:'damage', v:6}]}] }
+    ]
+  },
+
+  { id:'e_guild_chain_foreman', name:'缆索领班', act:1, tier:'elite',
+    hp:[60,72], gold:[30,44], glyph:'缆', color:'#78a3ab', size:'large',
+    lore:'他把工人的名字编进缆绳，绳子越粗，船就越难离港。',
+    moves:[
+      { id:'e_guild_chain_foreman_cast', name:'撒出钢缆', intent:'debuff', dmg:0, weight:3,
+        next:'e_guild_chain_foreman_pull',
+        tell:'钢缆绕向护甲，施加 2 层束缚，下一回合拉紧。',
+        effects:[{op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_guild_chain_foreman_pull', name:'收紧吊索', intent:'attack', dmg:12, weight:0,
+        next:'e_guild_chain_foreman_coil',
+        tell:'绞盘已咬住钢缆，将造成 12 点伤害，随后停机绕绳。',
+        effects:[{op:'damage', v:12}] },
+      { id:'e_guild_chain_foreman_coil', name:'停机绕绳', intent:'defend', dmg:0, weight:1,
+        tell:'绞盘停止转动，只获得 7 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:7}] },
+      { id:'e_guild_chain_foreman_anchor', name:'掷下小锚', intent:'attack', dmg:9, weight:2,
+        tell:'一枚小锚正在晃动，准备一次 9 点伤害的攻击。',
+        effects:[{op:'damage', v:9}] },
+      { id:'e_guild_chain_foreman_last', name:'断缆回弹', intent:'attackDebuff', dmg:14, weight:1,
+        once:true, requireHpBelow:0.4, next:'e_guild_chain_foreman_coil',
+        tell:'最后一根缆绳绷直，将造成 14 点伤害和 1 层脆骨，然后停机。',
+        effects:[{op:'damage', v:14}, {op:'debuff', s:'frail', v:1, t:'all'}] }
+    ]
+  },
+
+  { id:'e_dock_guildmaster', name:'沉港工会长', act:1, tier:'boss',
+    hp:[210,230], gold:[120,160], glyph:'港', color:'#bba068', size:'large',
+    lore:'他站在沉船吊机上，仍在批准三百年前那批船的离港申请。',
+    moves:[
+      { id:'e_dock_guildmaster_hoist', name:'升起吊机', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_dock_guildmaster_drop',
+        tell:'吊机正在举起船锚，获得 10 点格挡，下一回合单次砸下。',
+        effects:[{op:'block', v:10}] },
+      { id:'e_dock_guildmaster_drop', name:'船锚坠落', intent:'attack', dmg:12, weight:0,
+        requireHpAbove:0.5, next:'e_dock_guildmaster_repair',
+        tell:'船锚将造成 12 点伤害，砸完吊臂会卡住。',
+        effects:[{op:'damage', v:12}] },
+      { id:'e_dock_guildmaster_notice', name:'停航通知', intent:'attackDebuff', dmg:6, weight:1,
+        requireHpAbove:0.5, next:'e_dock_guildmaster_repair',
+        tell:'他以铁牌敲钟，造成 6 点伤害并施加 1 层虚弱，随后检修。',
+        effects:[{op:'damage', v:6}, {op:'debuff', s:'weak', v:1, t:'all'}] },
+      { id:'e_dock_guildmaster_lock', name:'锁死闸门', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_dock_guildmaster_twin',
+        tell:'船坞闸门关闭；获得 8 点格挡并施加 2 层束缚，下一回合双锚坠落。',
+        effects:[{op:'block', v:8}, {op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_dock_guildmaster_twin', name:'双锚坠落', intent:'attack', dmg:14, weight:0,
+        requireHpBelow:0.5, next:'e_dock_guildmaster_repair',
+        tell:'两枚船锚各造成 7 点伤害，随后吊机停摆。',
+        effects:[{op:'repeat', n:2, then:[{op:'damage', v:7}]}] },
+      { id:'e_dock_guildmaster_break', name:'拆下主梁', intent:'attack', dmg:18, weight:1,
+        once:true, requireHpBelow:0.25, next:'e_dock_guildmaster_repair',
+        tell:'主梁已经被拔出，这一击造成 18 点伤害，之后必须检修。',
+        effects:[{op:'damage', v:18}] },
+      { id:'e_dock_guildmaster_repair', name:'检修卡死的吊臂', intent:'defend', dmg:0, weight:1,
+        tell:'吊臂卡住，会长只获得 4 点格挡和 2 层易伤，本回合不会攻击。',
+        effects:[{op:'block', v:4}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
+  },
+
+  { id:'e_ghost_ferry_keeper', name:'幽灯摆渡长', act:1, tier:'boss',
+    hp:[200,220], gold:[120,160], glyph:'渡', color:'#7db8ae', size:'large',
+    lore:'他的渡船从不靠岸，乘客只能在两盏灯交换影子的时候下船。',
+    moves:[
+      { id:'e_ghost_ferry_keeper_light', name:'重新点亮船灯', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_ghost_ferry_keeper_oar',
+        tell:'他低头添灯油，获得 8 点格挡，下一回合用船桨击打。',
+        effects:[{op:'block', v:8}] },
+      { id:'e_ghost_ferry_keeper_oar', name:'渡魂桨', intent:'attack', dmg:8, weight:0,
+        requireHpAbove:0.5, next:'e_ghost_ferry_keeper_light',
+        tell:'长桨将造成 8 点伤害，随后他会回头照看船灯。',
+        effects:[{op:'damage', v:8}] },
+      { id:'e_ghost_ferry_keeper_smoke', name:'灯烟扑面', intent:'debuff', dmg:0, weight:1,
+        once:true, requireHpAbove:0.5, next:'e_ghost_ferry_keeper_light',
+        tell:'他吹灭一截灯芯，施加 2 层虚弱，不会直接造成伤害。',
+        effects:[{op:'debuff', s:'weak', v:2, t:'all'}] },
+      { id:'e_ghost_ferry_keeper_mirror', name:'水面定位', intent:'debuff', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_ghost_ferry_keeper_toll',
+        tell:'三道水纹围住你的倒影，施加 1 层束缚，下一回合连续拍打三次。',
+        effects:[{op:'debuff', s:'bind', v:1, t:'all'}] },
+      { id:'e_ghost_ferry_keeper_toll', name:'三重船税', intent:'attack', dmg:15, weight:0,
+        requireHpBelow:0.5, next:'e_ghost_ferry_keeper_dark',
+        tell:'三道水纹各造成 5 点伤害，随后船灯会彻底熄灭。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:5}]}] },
+      { id:'e_ghost_ferry_keeper_dark', name:'船灯熄灭', intent:'defend', dmg:0, weight:1,
+        tell:'他在黑暗中摸索，回复 3 点生命并获得 2 层易伤，不会攻击。',
+        effects:[{op:'heal', n:3}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
+  },
+
+  // ---------- ACT 2 · 幽灯巡逻队 ----------
+
+  { id:'e_ghost_lantern_scout', name:'幽灯斥候', act:2, tier:'normal',
+    hp:[34,42], gold:[16,24], glyph:'巡', color:'#72aaa0', size:'normal',
+    lore:'他先用灯照亮出口，再从出口后面走出来。',
+    moves:[
+      { id:'e_ghost_lantern_scout_cut', name:'灯下斩击', intent:'attack', dmg:9, weight:3,
+        next:'e_ghost_lantern_scout_trim',
+        tell:'刀锋已经离鞘，造成 9 点伤害后会整理灯芯。',
+        effects:[{op:'damage', v:9}] },
+      { id:'e_ghost_lantern_scout_trim', name:'修剪灯芯', intent:'defend', dmg:0, weight:1,
+        tell:'他低头修剪灯芯，只获得 6 点格挡。',
+        effects:[{op:'block', v:6}] },
+      { id:'e_ghost_lantern_scout_flash', name:'巡逻暗号', intent:'debuff', dmg:0, weight:2,
+        once:true, next:'e_ghost_lantern_scout_cut',
+        tell:'幽灯连闪两次，施加 2 层虚弱，下一回合拔刀。',
+        effects:[{op:'debuff', s:'weak', v:2, t:'all'}] }
+    ]
+  },
+
+  { id:'e_fog_ticket_clerk', name:'雾票检验员', act:2, tier:'normal',
+    hp:[38,46], gold:[18,26], glyph:'票', color:'#b5a88d', size:'normal',
+    lore:'他在每张票上盖同一个日期，那一天没有任何一艘船回来。',
+    moves:[
+      { id:'e_fog_ticket_clerk_punch', name:'验票打孔', intent:'attackDebuff', dmg:6, weight:2,
+        once:true, next:'e_fog_ticket_clerk_stamp',
+        tell:'票钳朝向你的胸口，造成 6 点伤害和 1 层标记，然后盖章。',
+        effects:[{op:'damage', v:6}, {op:'debuff', s:'mark', v:1, t:'all'}] },
+      { id:'e_fog_ticket_clerk_stamp', name:'铜章落下', intent:'attack', dmg:10, weight:0,
+        next:'e_fog_ticket_clerk_file',
+        tell:'铜章将造成 10 点基础伤害，随后检验员必须归档。',
+        effects:[{op:'damage', v:10}] },
+      { id:'e_fog_ticket_clerk_file', name:'整理旧票', intent:'defend', dmg:0, weight:3,
+        next:'e_fog_ticket_clerk_stamp',
+        tell:'他只会获得 8 点格挡，下一回合再次盖章。',
+        effects:[{op:'block', v:8}] }
+    ]
+  },
+
+  { id:'e_lantern_chain_guard', name:'提灯锁卫', act:2, tier:'normal',
+    hp:[48,56], gold:[20,28], glyph:'锁', color:'#83a6b4', size:'normal',
+    lore:'他的灯链连着同伴的锁甲，倒下时最后一圈链才会松开。',
+    moves:[
+      { id:'e_lantern_chain_guard_swing', name:'链灯抡击', intent:'attack', dmg:12, weight:3,
+        tell:'提灯绕成一个完整圆圈，准备造成 12 点伤害。',
+        effects:[{op:'damage', v:12}] },
+      { id:'e_lantern_chain_guard_cage', name:'灯链合围', intent:'debuff', dmg:0, weight:1,
+        once:true, requireTurn:[2], next:'e_lantern_chain_guard_swing',
+        tell:'链环围向护腕，施加 2 层束缚，下一回合抡灯。',
+        effects:[{op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_lantern_chain_guard_brace', name:'架起锁甲', intent:'defend', dmg:0, weight:2,
+        tell:'他获得 14 点格挡；若被击倒，余下同伴会得到 1 层神器。',
+        effects:[{op:'block', v:14}] }
+    ],
+    onDeath:[{op:'buff', s:'artifact', v:1, t:'all'}]
+  },
+
+  { id:'e_ash_bell_tracker', name:'灰钟追迹者', act:2, tier:'normal',
+    hp:[32,40], gold:[15,23], glyph:'钟', color:'#af9db0', size:'normal',
+    lore:'钟声不会传出巷子，却能一直传到你的手指里面。',
+    moves:[
+      { id:'e_ash_bell_tracker_ring', name:'追迹钟声', intent:'debuff', dmg:0, weight:2,
+        next:'e_ash_bell_tracker_twin',
+        tell:'钟绳已经拉紧，施加 1 层缠绕，下一回合发动两次攻击。',
+        effects:[{op:'debuff', s:'entangled', v:1, t:'all'}] },
+      { id:'e_ash_bell_tracker_twin', name:'双音敲击', intent:'attack', dmg:10, weight:0,
+        next:'e_ash_bell_tracker_hush',
+        tell:'两个钟锤将各造成 5 点伤害，敲完会暂时停声。',
+        effects:[{op:'repeat', n:2, then:[{op:'damage', v:5}]}] },
+      { id:'e_ash_bell_tracker_hush', name:'捂住钟口', intent:'defend', dmg:0, weight:1,
+        tell:'钟口被堵住，只获得 5 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:5}] },
+      { id:'e_ash_bell_tracker_tap', name:'钟沿轻击', intent:'attack', dmg:7, weight:2,
+        tell:'他只抬起一个钟锤，准备一次 7 点伤害的攻击。',
+        effects:[{op:'damage', v:7}] }
+    ]
+  },
+
+  { id:'e_lantern_inquisitor', name:'幽灯审问官', act:2, tier:'elite',
+    hp:[102,116], gold:[48,70], glyph:'审', color:'#72b3a7', size:'large',
+    lore:'他要的答案并不在问题里面，而在灯照不到的地方。',
+    moves:[
+      { id:'e_lantern_inquisitor_aim', name:'锁定灯影', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_lantern_inquisitor_beam',
+        tell:'灯罩收窄，获得 10 点格挡，下一回合发射一道强光。',
+        effects:[{op:'block', v:10}] },
+      { id:'e_lantern_inquisitor_beam', name:'审问光束', intent:'attack', dmg:16, weight:0,
+        next:'e_lantern_inquisitor_dim',
+        tell:'光束将造成 16 点伤害，灯罩随后会过热。',
+        effects:[{op:'damage', v:16}] },
+      { id:'e_lantern_inquisitor_dim', name:'冷却灯罩', intent:'defend', dmg:0, weight:1,
+        tell:'灯罩冒出冷雾，只获得 5 点格挡和 2 层易伤。',
+        effects:[{op:'block', v:5}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] },
+      { id:'e_lantern_inquisitor_hunt', name:'逼问斩击', intent:'attackDebuff', dmg:10, weight:2,
+        tell:'短刀正在找护甲接缝，造成 10 点伤害并施加 1 层虚弱。',
+        effects:[{op:'damage', v:10}, {op:'debuff', s:'weak', v:1, t:'all'}] },
+      { id:'e_lantern_inquisitor_spread', name:'三面分光', intent:'attack', dmg:18, weight:2,
+        requireHpBelow:0.5, next:'e_lantern_inquisitor_dim',
+        tell:'破裂的灯罩把光分成三束，每束造成 6 点伤害，随后冷却。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:6}]}] }
+    ]
+  },
+
+  { id:'e_tide_glass_diver', name:'潮玻璃潜督', act:2, tier:'elite',
+    hp:[110,124], gold:[50,72], glyph:'潜', color:'#79b5b9', size:'large',
+    lore:'潜盔里一直有水，水面以下才是他的脸。',
+    moves:[
+      { id:'e_tide_glass_diver_shell', name:'合拢潜盔', intent:'defend', dmg:0, weight:3,
+        next:'e_tide_glass_diver_harpoon',
+        tell:'潜盔闭合，获得 18 点格挡和 2 层荆棘，下一回合射出鱼叉。',
+        effects:[{op:'block', v:18}, {op:'buff', s:'thorns', v:2, t:'self'}] },
+      { id:'e_tide_glass_diver_harpoon', name:'高压鱼叉', intent:'attack', dmg:14, weight:0,
+        next:'e_tide_glass_diver_surface',
+        tell:'鱼叉将造成 14 点伤害，射出后必须打开潜盔减压。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_tide_glass_diver_surface', name:'开盔减压', intent:'defend', dmg:0, weight:1,
+        tell:'潜盔打开，失去 2 层荆棘并获得 2 层易伤，本回合不会攻击。',
+        effects:[{op:'buff', s:'thorns', v:-2, t:'self'}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] },
+      { id:'e_tide_glass_diver_knife', name:'潜刀切割', intent:'attack', dmg:10, weight:2,
+        tell:'潜刀沿水线滑动，只会造成 10 点伤害。',
+        effects:[{op:'damage', v:10}] },
+      { id:'e_tide_glass_diver_shards', name:'碎盔连射', intent:'attack', dmg:18, weight:1,
+        requireHpBelow:0.5, next:'e_tide_glass_diver_surface',
+        tell:'三片潜盔玻璃已经弹起，各造成 6 点伤害，随后减压。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:6}]}] }
+    ]
+  },
+
+  { id:'e_ghost_lantern_marshall', name:'幽灯巡夜总长', act:2, tier:'boss',
+    hp:[250,280], gold:[140,180], glyph:'夜', color:'#88b8a8', size:'large',
+    lore:'城里每一盏没有熄灭的灯，都挂在他的名字下面。',
+    moves:[
+      { id:'e_ghost_lantern_marshall_align', name:'列齐巡夜灯', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_ghost_lantern_marshall_cross',
+        tell:'三盏巡夜灯排成一线，获得 14 点格挡，下一回合三连射。',
+        effects:[{op:'block', v:14}] },
+      { id:'e_ghost_lantern_marshall_cross', name:'三灯交火', intent:'attack', dmg:15, weight:0,
+        requireHpAbove:0.5, next:'e_ghost_lantern_marshall_dim',
+        tell:'三盏灯各造成 5 点伤害，发射后总长必须更换灯芯。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:5}]}] },
+      { id:'e_ghost_lantern_marshall_verdict', name:'巡夜裁断', intent:'attackDebuff', dmg:12, weight:1,
+        next:'e_ghost_lantern_marshall_dim',
+        tell:'巡夜刀将造成 12 点伤害和 1 层虚弱，随后整理灯具。',
+        effects:[{op:'damage', v:12}, {op:'debuff', s:'weak', v:1, t:'all'}] },
+      { id:'e_ghost_lantern_marshall_blackout', name:'熄灭全街', intent:'debuff', dmg:0, weight:2,
+        once:true, requireHpBelow:0.5, next:'e_ghost_lantern_marshall_lock',
+        tell:'灯油正在淌出，将施加 2 层灼烧，然后重新锁定你的位置。',
+        effects:[{op:'debuff', s:'burn', v:2, t:'all'}] },
+      { id:'e_ghost_lantern_marshall_lock', name:'封锁灯影', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_ghost_lantern_marshall_storm',
+        tell:'三盏破灯转向你，获得 8 点格挡并施加 2 层束缚，下一回合齐射。',
+        effects:[{op:'block', v:8}, {op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_ghost_lantern_marshall_storm', name:'碎灯风暴', intent:'attack', dmg:21, weight:0,
+        requireHpBelow:0.5, next:'e_ghost_lantern_marshall_dim',
+        tell:'三盏碎灯各造成 7 点伤害，之后会完全熄灭一个回合。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:7}]}] },
+      { id:'e_ghost_lantern_marshall_dim', name:'更换灯芯', intent:'defend', dmg:0, weight:1,
+        tell:'所有灯具都在冷却，只获得 4 点格挡和 2 层易伤，本回合不会攻击。',
+        effects:[{op:'block', v:4}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
+  },
+
+  { id:'e_submerged_beacon', name:'沉海灯塔心', act:2, tier:'boss',
+    hp:[260,290], gold:[140,180], glyph:'塔', color:'#84b5ba', size:'large',
+    lore:'海平面升到灯室以后，灯塔依然认为每一条影子都是等待导航的船。',
+    moves:[
+      { id:'e_submerged_beacon_charge', name:'聚拢海光', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_submerged_beacon_sweep',
+        tell:'灯塔镜片慢慢聚焦，获得 16 点格挡，下一回合横扫一道光束。',
+        effects:[{op:'block', v:16}] },
+      { id:'e_submerged_beacon_sweep', name:'海光横扫', intent:'attack', dmg:14, weight:0,
+        requireHpAbove:0.5, next:'e_submerged_beacon_cool',
+        tell:'光束将造成 14 点伤害，扫完后镜片会停转。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_submerged_beacon_tide', name:'污潮拍岸', intent:'attackDebuff', dmg:10, weight:1,
+        requireHpAbove:0.5, next:'e_submerged_beacon_cool',
+        tell:'污水涌向脚边，造成 10 点伤害和 2 层中毒，随后镜片停转。',
+        effects:[{op:'damage', v:10}, {op:'debuff', s:'poison', v:2, t:'all'}] },
+      { id:'e_submerged_beacon_crack', name:'灯室开裂', intent:'buff', dmg:0, weight:2,
+        once:true, requireHpBelow:0.5, next:'e_submerged_beacon_overload',
+        tell:'裂口露出备用光源，只获得 1 点力量，下一回合开始超载蓄光。',
+        effects:[{op:'buff', s:'strength', v:1, t:'self'}] },
+      { id:'e_submerged_beacon_overload', name:'备用光源蓄能', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_submerged_beacon_arc',
+        tell:'三片备用镜面发亮，获得 10 点格挡，下一回合发射三束光。',
+        effects:[{op:'block', v:10}] },
+      { id:'e_submerged_beacon_arc', name:'三镜共振', intent:'attack', dmg:18, weight:0,
+        requireHpBelow:0.5, next:'e_submerged_beacon_cool',
+        tell:'三片镜面各造成 6 点基础伤害，之后所有镜片会停止转动。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:6}]}] },
+      { id:'e_submerged_beacon_cool', name:'镜片停转', intent:'defend', dmg:0, weight:1,
+        tell:'灯塔正在排水，只获得 6 点格挡和 2 层易伤，不会发射光束。',
+        effects:[{op:'block', v:6}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
+  },
+
+  // ---------- ACT 3 · 血契议会 ----------
+
+  { id:'e_blood_ledger_scribe', name:'血账抄写员', act:3, tier:'normal',
+    hp:[54,64], gold:[26,38], glyph:'账', color:'#bf7f91', size:'normal',
+    lore:'他只抄那些没有签名的账，因为那些账最终都要由活人来认。',
+    moves:[
+      { id:'e_blood_ledger_scribe_note', name:'记下血债', intent:'attackDebuff', dmg:10, weight:2,
+        once:true, next:'e_blood_ledger_scribe_settle',
+        tell:'血笔正在落下，造成 10 点伤害和 2 层标记，下一回合追债。',
+        effects:[{op:'damage', v:10}, {op:'debuff', s:'mark', v:2, t:'all'}] },
+      { id:'e_blood_ledger_scribe_settle', name:'血笔清算', intent:'attack', dmg:14, weight:2,
+        next:'e_blood_ledger_scribe_erase',
+        tell:'血笔会造成 14 点基础伤害，随后必须擦去旧账。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_blood_ledger_scribe_erase', name:'擦去旧账', intent:'defend', dmg:0, weight:1,
+        tell:'他低头擦账，只获得 10 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:10}] },
+      { id:'e_blood_ledger_scribe_seal', name:'封住牌袋', intent:'debuff', dmg:0, weight:1,
+        once:true, requireTurn:[2], next:'e_blood_ledger_scribe_settle',
+        tell:'封条绕向护腕，施加 2 层束缚，下一回合追债。',
+        effects:[{op:'debuff', s:'bind', v:2, t:'all'}] }
+    ]
+  },
+
+  { id:'e_contract_bailiff', name:'契约执行吏', act:3, tier:'normal',
+    hp:[70,82], gold:[30,44], glyph:'契', color:'#ae829a', size:'normal',
+    lore:'他不读契约。他只负责把印章放到最后一块仍然完整的皮肤上。',
+    moves:[
+      { id:'e_contract_bailiff_writ', name:'宣读强制令', intent:'debuff', dmg:0, weight:3,
+        next:'e_contract_bailiff_strike',
+        tell:'强制令将施加 2 层易伤，下一回合落下契锤。',
+        effects:[{op:'debuff', s:'vulnerable', v:2, t:'all'}] },
+      { id:'e_contract_bailiff_strike', name:'契锤落款', intent:'attack', dmg:14, weight:0,
+        next:'e_contract_bailiff_sheath',
+        tell:'契锤会造成 14 点基础伤害，随后执行吏必须重新装印。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_contract_bailiff_sheath', name:'重新装印', intent:'defend', dmg:0, weight:1,
+        tell:'他正在更换印章，只获得 10 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:10}] }
+    ]
+  },
+
+  { id:'e_salt_witness', name:'盐血见证人', act:3, tier:'normal',
+    hp:[50,60], gold:[24,36], glyph:'证', color:'#b5aba0', size:'normal',
+    lore:'他把每一个看见的名字刻在盐块上，血滴进去以后名字才算成立。',
+    moves:[
+      { id:'e_salt_witness_cut', name:'盐刀取证', intent:'attack', dmg:12, weight:3,
+        tell:'盐刀已握紧，将造成一次 12 点伤害的攻击。',
+        effects:[{op:'damage', v:12}] },
+      { id:'e_salt_witness_crust', name:'结成盐壳', intent:'defend', dmg:0, weight:1,
+        once:true, next:'e_salt_witness_cut',
+        tell:'盐壳结硬，获得 12 点格挡和 1 层荆棘，下一回合用盐刀取证。',
+        effects:[{op:'block', v:12}, {op:'buff', s:'thorns', v:1, t:'self'}] },
+      { id:'e_salt_witness_mend', name:'盐水缝合', intent:'defend', dmg:0, weight:2,
+        requireHpBelow:0.5, next:'e_salt_witness_cut',
+        tell:'他用盐水缝合伤口，回复 6 点生命并获得 2 层虚弱，下一次取证会减弱。',
+        effects:[{op:'heal', n:6}, {op:'debuff', s:'weak', v:2, t:'self'}] }
+    ]
+  },
+
+  { id:'e_cinder_notary', name:'烬印公证人', act:3, tier:'normal',
+    hp:[62,72], gold:[28,42], glyph:'印', color:'#ca8273', size:'normal',
+    lore:'他把公证书烤到字迹消失，剩下的温度才是证明。',
+    moves:[
+      { id:'e_cinder_notary_brand', name:'烬印烙下', intent:'attackDebuff', dmg:11, weight:1,
+        once:true, next:'e_cinder_notary_ash',
+        tell:'烧红的公证印会造成 11 点伤害和 1 层灼烧，之后必须清理炉灰。',
+        effects:[{op:'damage', v:11}, {op:'debuff', s:'burn', v:1, t:'all'}] },
+      { id:'e_cinder_notary_press', name:'双印核对', intent:'attack', dmg:14, weight:3,
+        next:'e_cinder_notary_ash',
+        tell:'两枚铜印将各造成 7 点伤害，落印后会暂停清灰。',
+        effects:[{op:'repeat', n:2, then:[{op:'damage', v:7}]}] },
+      { id:'e_cinder_notary_ash', name:'清理炉灰', intent:'defend', dmg:0, weight:1,
+        tell:'他正把灰拨进抽屉，只获得 9 点格挡，本回合不会攻击。',
+        effects:[{op:'block', v:9}] },
+      { id:'e_cinder_notary_fault', name:'指出印缝', intent:'debuff', dmg:0, weight:1,
+        requireTurn:[2], next:'e_cinder_notary_press',
+        tell:'他指向护甲接缝，施加 2 层脆骨，下一回合核对双印。',
+        effects:[{op:'debuff', s:'frail', v:2, t:'all'}] }
+    ]
+  },
+
+  { id:'e_oath_executioner', name:'誓约行刑官', act:3, tier:'elite',
+    hp:[160,180], gold:[78,106], glyph:'刑', color:'#b57d99', size:'large',
+    lore:'他只执行在场的人亲口确认过的誓言，包括临死前说出的那句。',
+    moves:[
+      { id:'e_oath_executioner_measure', name:'量刑刻度', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_oath_executioner_axe',
+        tell:'斧柄上的刻度被锁定，获得 16 点格挡，下一回合落下一斧。',
+        effects:[{op:'block', v:16}] },
+      { id:'e_oath_executioner_axe', name:'契斧行刑', intent:'attack', dmg:22, weight:0,
+        next:'e_oath_executioner_withdraw',
+        tell:'契斧将造成 22 点伤害，劈完会嵌在地里。',
+        effects:[{op:'damage', v:22}] },
+      { id:'e_oath_executioner_withdraw', name:'拔出契斧', intent:'defend', dmg:0, weight:1,
+        tell:'契斧卡在地缝，行刑官只获得 6 点格挡和 2 层易伤。',
+        effects:[{op:'block', v:6}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] },
+      { id:'e_oath_executioner_backhand', name:'斧背驱赶', intent:'attack', dmg:16, weight:2,
+        next:'e_oath_executioner_withdraw',
+        tell:'斧背将造成 16 点伤害，之后必须重新握柄。',
+        effects:[{op:'damage', v:16}] },
+      { id:'e_oath_executioner_sentence', name:'重订刑期', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_oath_executioner_triple',
+        tell:'他翻开最后三条誓约，获得 12 点格挡并施加 1 层缠绕，下一回合三连斩。',
+        effects:[{op:'block', v:12}, {op:'debuff', s:'entangled', v:1, t:'all'}] },
+      { id:'e_oath_executioner_triple', name:'三誓清算', intent:'attack', dmg:24, weight:0,
+        requireHpBelow:0.5, next:'e_oath_executioner_withdraw',
+        tell:'三条誓约各落下一次 8 点伤害的斩击，随后契斧再次卡住。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:8}]}] }
+    ]
+  },
+
+  { id:'e_council_sealkeeper', name:'议会封印保管人', act:3, tier:'elite',
+    hp:[170,190], gold:[80,108], glyph:'封', color:'#b1a48f', size:'large',
+    lore:'他负责保管从未通过的法案。每一块封印都还有一点脉搏。',
+    moves:[
+      { id:'e_council_sealkeeper_close', name:'合拢铁封', intent:'defend', dmg:0, weight:3,
+        next:'e_council_sealkeeper_stamp',
+        tell:'铁封合拢，获得 20 点格挡和 3 层金属化，下一回合压印。',
+        effects:[{op:'block', v:20}, {op:'buff', s:'metallicize', v:3, t:'self'}] },
+      { id:'e_council_sealkeeper_stamp', name:'议会压印', intent:'attack', dmg:18, weight:0,
+        next:'e_council_sealkeeper_open',
+        tell:'铁封将造成 18 点基础伤害，压印后会打开封匣。',
+        effects:[{op:'damage', v:18}] },
+      { id:'e_council_sealkeeper_open', name:'打开封匣', intent:'defend', dmg:0, weight:1,
+        tell:'封匣打开，失去 3 层金属化，只获得 4 点格挡和 2 层易伤。',
+        effects:[{op:'buff', s:'metallicize', v:-3, t:'self'}, {op:'block', v:4},
+          {op:'debuff', s:'vulnerable', v:2, t:'self'}] },
+      { id:'e_council_sealkeeper_chain', name:'封链抽打', intent:'attack', dmg:14, weight:2,
+        tell:'封链正在摆动，只会造成 14 点基础伤害。',
+        effects:[{op:'damage', v:14}] },
+      { id:'e_council_sealkeeper_break', name:'废除旧封', intent:'buff', dmg:0, weight:2,
+        once:true, requireHpBelow:0.5, next:'e_council_sealkeeper_stamp',
+        tell:'旧封被打碎，获得 2 点力量，下一回合压印，之后仍须打开封匣。',
+        effects:[{op:'buff', s:'strength', v:2, t:'self'}] }
+    ]
+  },
+
+  { id:'e_blood_contract_speaker', name:'血契议会代言人', act:3, tier:'boss',
+    hp:[290,320], gold:[180,200], glyph:'议', color:'#bf8199', size:'large',
+    lore:'整间议会只有他一张嘴。其他席位上的人都已在契约里签过字了。',
+    moves:[
+      { id:'e_blood_contract_speaker_read', name:'宣读债条', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_blood_contract_speaker_verdict',
+        tell:'他抬起债条，获得 16 点格挡并施加 1 层标记，下一回合裁决。',
+        effects:[{op:'block', v:16}, {op:'debuff', s:'mark', v:1, t:'all'}] },
+      { id:'e_blood_contract_speaker_verdict', name:'议会裁决', intent:'attack', dmg:18, weight:0,
+        requireHpAbove:0.5, next:'e_blood_contract_speaker_recess',
+        tell:'法槌将造成 18 点基础伤害，裁决后必须休庭整理契约。',
+        effects:[{op:'damage', v:18}] },
+      { id:'e_blood_contract_speaker_question', name:'交叉质询', intent:'attackDebuff', dmg:12, weight:1,
+        requireHpAbove:0.5, next:'e_blood_contract_speaker_recess',
+        tell:'铁笔将造成 12 点基础伤害和 1 层虚弱，随后休庭。',
+        effects:[{op:'damage', v:12}, {op:'debuff', s:'weak', v:1, t:'all'}] },
+      { id:'e_blood_contract_speaker_sign', name:'封死血契', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_blood_contract_speaker_execute',
+        tell:'血契边缘开始凝固，获得 12 点格挡并施加 2 层束缚，下一回合强制执行。',
+        effects:[{op:'block', v:12}, {op:'debuff', s:'bind', v:2, t:'all'}] },
+      { id:'e_blood_contract_speaker_execute', name:'强制执行', intent:'attack', dmg:24, weight:0,
+        requireHpBelow:0.5, next:'e_blood_contract_speaker_recess',
+        tell:'血契将造成一次 24 点基础伤害的重击，之后代言人必须休庭。',
+        effects:[{op:'damage', v:24}] },
+      { id:'e_blood_contract_speaker_final', name:'最后三条附款', intent:'attack', dmg:30, weight:1,
+        once:true, requireHpBelow:0.25, next:'e_blood_contract_speaker_recess',
+        tell:'最后三条附款同时生效，各造成 10 点基础伤害，只会使用一次，随后休庭。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:10}]}] },
+      { id:'e_blood_contract_speaker_recess', name:'休庭整理', intent:'defend', dmg:0, weight:1,
+        tell:'代言人低头整理契约，只获得 5 点格挡和 2 层易伤，本回合不会攻击。',
+        effects:[{op:'block', v:5}, {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
+  },
+
+  { id:'e_red_council_engine', name:'赤议院决议机', act:3, tier:'boss',
+    hp:[300,320], gold:[180,200], glyph:'决', color:'#ba827b', size:'large',
+    lore:'议员退场后，机器仍在投票。每次全票通过，炉门就向外打开一点。',
+    moves:[
+      { id:'e_red_council_engine_ratify', name:'核准议案', intent:'defend', dmg:0, weight:3,
+        requireHpAbove:0.5, next:'e_red_council_engine_stamp',
+        tell:'压印台升起，获得 18 点格挡，下一回合落下核准印。',
+        effects:[{op:'block', v:18}] },
+      { id:'e_red_council_engine_stamp', name:'核准印坠落', intent:'attack', dmg:16, weight:0,
+        requireHpAbove:0.5, next:'e_red_council_engine_idle',
+        tell:'核准印将造成 16 点伤害，落印后机器必须退回空档。',
+        effects:[{op:'damage', v:16}] },
+      { id:'e_red_council_engine_archive', name:'铁皮归档', intent:'defend', dmg:0, weight:1,
+        once:true, requireHpAbove:0.5, next:'e_red_council_engine_stamp',
+        tell:'档案铁皮向外张开，获得 12 点格挡和 2 层荆棘，下一回合落印。',
+        effects:[{op:'block', v:12}, {op:'buff', s:'thorns', v:2, t:'self'}] },
+      { id:'e_red_council_engine_override', name:'紧急表决', intent:'defend', dmg:0, weight:3,
+        requireHpBelow:0.5, next:'e_red_council_engine_triple',
+        tell:'三座压印台一起升起，获得 10 点格挡，下一回合三印连落。',
+        effects:[{op:'block', v:10}] },
+      { id:'e_red_council_engine_triple', name:'三印全票通过', intent:'attack', dmg:24, weight:0,
+        requireHpBelow:0.5, next:'e_red_council_engine_idle',
+        tell:'三枚决议印各造成 8 点伤害，落印后所有压台会回到空档。',
+        effects:[{op:'repeat', n:3, then:[{op:'damage', v:8}]}] },
+      { id:'e_red_council_engine_emergency', name:'焚毁否决票', intent:'attackDebuff', dmg:28, weight:1,
+        once:true, requireHpBelow:0.25, next:'e_red_council_engine_idle',
+        tell:'否决票被送进炉门，造成 28 点伤害和 1 层灼烧，只会执行一次，随后停机。',
+        effects:[{op:'damage', v:28}, {op:'debuff', s:'burn', v:1, t:'all'}] },
+      { id:'e_red_council_engine_idle', name:'压台空档', intent:'defend', dmg:0, weight:1,
+        tell:'压台正在归位，失去 2 层荆棘，只获得 4 点格挡和 2 层易伤。',
+        effects:[{op:'buff', s:'thorns', v:-2, t:'self'}, {op:'block', v:4},
+          {op:'debuff', s:'vulnerable', v:2, t:'self'}] }
+    ]
   }
 
 ];
+
+export const ENEMIES = [...BASE_ENEMIES, ...HARBOR_ENEMIES, ...DEPTH_ENEMIES];

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="雷鸣机城的齿轮厂房与引雷装置">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="M415 121h72v119h-72zm81-53h74v172h-74zm282 55h65v117h-65zm72-43h79v160h-79zm89 63h61v97h-61z" fill="#555750"/>
+  <path d="M573 99h205v111H573z" fill="#7d8170"/>
+  <path d="m569 100 54-31 22 31 54-31 18 31 54-31 14 31z" fill="#b5ad86"/>
+  <path d="M593 128h30v35h-30zm51 0h30v35h-30zm51 0h30v35h-30zm51 0h15v35h-15z" fill="#d6b464"/>
+  <path d="M699 205V63m-22-2h45m-34-14h22m-11-22v25M889 82V30m-13 1h25" stroke="#ded3a0" stroke-width="5"/>
+  <path d="m691 5-23 30h26l-12 28 33-41h-28l18-17m167 13-21 30h24l-13 23 35-38h-27l13-15" fill="#dfbf66"/>
+  <path d="m505 184 7-10 10 4 6-11 12 2 4 13 13 4-2 12-13 4-5 13-12-2-6-10-13 1-5-12z" fill="#aaa68a"/>
+  <circle cx="532" cy="191" r="12" fill="#33443c" stroke="#d5c187" stroke-width="4"/>
+  <path d="M598 201v-24h51v24m25 0v-24h51v24m27 0v-24h35v24M462 91v-32h34" stroke="#ae9770" stroke-width="8" fill="none"/>
+  <path d="M422 216h578v24H398z" fill="#80866c"/>
+  <path d="M437 223h39m28 0h39m29 0h40m28 0h40m28 0h40m28 0h40m27 0h40m28 0h40" stroke="#303c34" stroke-width="4"/>
+</svg>

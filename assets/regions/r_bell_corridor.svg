@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 240" role="img" aria-label="钟雾回廊的拱门与悬铃">
+  <rect width="1000" height="240" fill="#101b1a"/>
+  <path d="M400 202h600v38H350z" fill="#435851"/>
+  <path d="M450 50h535v22H450zM468 72h28v130h-28zm111 0h28v130h-28zm112 0h28v130h-28zm112 0h28v130h-28zm112 0h28v130h-28z" fill="#9bab8a"/>
+  <path d="M496 112q41-85 83 0m28 0q42-85 84 0m28 0q42-85 84 0m28 0q42-85 84 0" fill="none" stroke="#bdc7a3" stroke-width="13"/>
+  <path d="M490 196h111m-89-30h80m25 30h100m-86-30h76m29 30h107m-87-30h75m22 30h105" stroke="#6b8070" stroke-width="4"/>
+  <path d="M538 69v49m111-49v49m113-49v49m112-49v49" stroke="#d0c385" stroke-width="3"/>
+  <path d="M525 126q0-22 13-22t13 22l7 9h-40zm111 0q0-22 13-22t13 22l7 9h-40zm113 0q0-22 13-22t13 22l7 9h-40zm112 0q0-22 13-22t13 22l7 9h-40z" fill="#c3ab63" stroke="#e4d19a" stroke-width="2"/>
+  <path d="M538 135v9m111-9v9m113-9v9m112-9v9" stroke="#d7c67e" stroke-width="3"/>
+  <path d="m445 50 58-25 91 25m62 0 58-34 78 34m47 0 62-25 69 25" fill="#536b5a"/>
+  <path d="M391 181h151m-86 12h289m-51-46h202m-19 36h103" stroke="#c0d1bd" stroke-opacity=".28" stroke-width="6"/>
+  <path d="M440 212h511m-481 12h423" stroke="#a7bb9c" stroke-width="3"/>
+</svg>

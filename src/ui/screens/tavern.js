@@ -11,9 +11,11 @@ import {
 } from '../../systems/meta.js';
 import { ALL_CHARACTERS, ALL_CARDS, ALL_RELICS, RARITY_LABEL } from '../../data/index.js';
 import { cardEl } from '../components.js';
+import { commissionById, ensureCommissionBoard, chooseCommission, commissionRank, commissionReward } from '../../systems/commissions.js';
 
 const TABS = [
   { id: 'home', label: '账 房' },
+  { id: 'commission', label: '委 托' },
   { id: 'facility', label: '设 施' },
   { id: 'staff', label: '人 手' },
   { id: 'upgrade', label: '装 备' },
@@ -23,7 +25,8 @@ const TABS = [
 
 export function renderTavern({ app, root, params }) {
   const meta = app.meta;
-  let tab = 'home';
+  const ending = meta.ending || (meta.hearts <= 0 ? 'lost' : null);
+  let tab = TABS.some((t) => t.id === params.tab) ? params.tab : 'home';
 
   const header = el('div', {});
   const tabsBar = el('div', { class: 'hud', style: { gap: '6px', padding: '7px 14px' } });
@@ -55,7 +58,7 @@ export function renderTavern({ app, root, params }) {
     for (const t of TABS) {
       tabsBar.append(el('button', {
         class: `btn sm ${tab === t.id ? 'primary' : 'ghost'}`,
-        onclick: () => { tab = t.id; renderAll(); },
+        onclick: () => { tab = t.id; params.tab = tab; renderAll(); },
       }, t.label));
     }
   }
@@ -67,7 +70,7 @@ export function renderTavern({ app, root, params }) {
     const w = el('div', { class: 'wrap' });
     body.append(w);
 
-    if (params.crowned) {
+    if (ending === 'won') {
       w.append(panel('守夜结束',
         el('div', { style: { textAlign: 'center', lineHeight: '2' } },
           el('div', { class: 'big-glyph' }, '🌅'),
@@ -78,6 +81,9 @@ export function renderTavern({ app, root, params }) {
             statBox(meta.stats.totalKills, '累计击杀'),
             statBox(meta.stats.totalGold, '累计金币'),
             statBox(meta.embers, '剩余印记'),
+          ),
+          el('div', { class: 'btn-row', style: { justifyContent: 'center', marginTop: '16px' } },
+            el('button', { class: 'btn primary', onclick: restart }, '重新点灯'),
           ),
         ),
       ));
@@ -97,25 +103,37 @@ export function renderTavern({ app, root, params }) {
       }
     }
 
-    if (params.gameOver) {
+    if (ending === 'lost') {
       w.append(panel('守夜终结',
         el('div', { style: { textAlign: 'center' } },
           el('div', { class: 'big-glyph' }, '🕯️'),
           el('p', { style: { color: 'var(--fg-dim)', fontSize: '15px' } }, '最后一盏灯灭了。锈锚酒馆沉进灰烬。'),
           el('div', { class: 'btn-row', style: { justifyContent: 'center', marginTop: '16px' } },
-            el('button', { class: 'btn primary', onclick: () => { app.meta = newMeta(); app.goto('title'); } }, '重新点灯'),
+            el('button', { class: 'btn primary', onclick: restart }, '重新点灯'),
           ),
         ),
       ));
       return;
     }
 
+    if (ending && tab === 'home') return;
+
     if (tab === 'home') renderHome(w);
+    else if (tab === 'commission') renderCommissions(w);
     else if (tab === 'facility') renderFacility(w);
     else if (tab === 'staff') renderStaff(w);
     else if (tab === 'upgrade') renderUpgrade(w);
     else if (tab === 'codex') renderCodex(w);
     else if (tab === 'record') renderRecord(w);
+  }
+
+  function restart() {
+    app.meta = newMeta();
+    app.run = null;
+    app.battle = null;
+    app.runResult = null;
+    app.save();
+    app.goto('title');
   }
 
   // ---------- 账房 ----------
@@ -124,10 +142,19 @@ export function renderTavern({ app, root, params }) {
     const inc = nightlyIncome(meta);
     const tide = tideDamage(meta);
     const final = isFinalNight(meta.night);
+    const board = ensureCommissionBoard(meta, 3 + b.commissionChoices);
+    const commission = commissionById(board.selectedId);
 
     w.append(el('div', { class: 'tavern-hero' },
       el('div', { style: { fontSize: '13px', letterSpacing: '5px', color: 'var(--ember-2)' } }, NIGHT_NAMES[Math.min(meta.night - 1, NIGHT_NAMES.length - 1)]),
       el('p', { style: { color: 'var(--fg-dim)', maxWidth: '620px', margin: '8px auto 0' }, text: nightFlavor(meta.night) }),
+    ));
+    w.append(el('div', { class: 'commission-home-line' },
+      el('div', {}, el('b', {}, commission ? commission.name : '码头公会'),
+        el('div', { class: 'hint' }, commission
+          ? `${commission.goals.map((goal) => `${goal.label} ${goal.target}${goal.metric === 'hpPercent' ? '%' : ''}`).join(' · ')} · 成功归来`
+          : `${commissionRank(board.reputation).name} · 公会声望 ${board.reputation}`)),
+      el('button', { class: 'btn sm ghost', onclick: () => { tab = 'commission'; params.tab = tab; renderAll(); } }, commission ? '查看委托' : '公会账单'),
     ));
 
     w.append(panel('今夜盘算',
@@ -222,9 +249,9 @@ export function renderTavern({ app, root, params }) {
           el('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
             el('b', {}, f.name),
             el('span', { class: 'lv-badge' }, `Lv.${lv}/${f.max}`),
-            lv > 0 ? el('span', { class: 'hint' }, `每晚 +${f.income[lv] || 0}`) : null,
+            lv > 0 ? el('span', { class: 'hint' }, `每晚 +${f.income[lv - 1] || 0}`) : null,
           ),
-          el('div', { class: 'hint', style: { lineHeight: 1.45 } }, maxed ? f.desc : facilityDesc(f, Math.max(1, lv + 1))),
+          el('div', { class: 'hint', style: { lineHeight: 1.45 } }, facilityDesc(f, maxed ? lv : Math.max(1, lv + 1))),
         ),
         el('button', {
           class: `btn sm ${maxed ? 'ghost' : 'gold'}`,
@@ -241,6 +268,49 @@ export function renderTavern({ app, root, params }) {
     }
     grid.append(panel('修缮与扩建', list));
     w.append(grid);
+  }
+
+  function renderCommissions(w) {
+    const b = bonuses(meta);
+    const board = ensureCommissionBoard(meta, 3 + b.commissionChoices);
+    const rank = commissionRank(board.reputation);
+    app.save();
+    w.append(sectionTitle('码 头 委 托', `夜舟公会 · ${rank.name}`));
+    w.append(el('div', { class: 'commission-ledger' },
+      statBox(board.reputation, '公会声望'),
+      statBox(board.completed.length, '交付委托'),
+      statBox(`${Math.round((rank.multiplier - 1) * 100)}%`, '声望报酬加成'),
+      statBox(rank.next == null ? '盟约已立' : rank.next, '下一声望阶位'),
+    ));
+    if (board.lastResult) {
+      const last = board.lastResult;
+      w.append(el('div', { class: `commission-last ${last.success ? 'good-text' : 'hint'}` },
+        `第 ${last.night} 夜 · ${last.name} · ${last.reason}${last.success ? ` · +${last.gold} 金币 / +${last.embers} 印记 / +${last.reputation} 声望` : ''}`));
+    }
+    if (ending || board.resolved) return;
+    const grid = el('div', { class: 'commission-grid' });
+    for (const id of board.offers) {
+      const entry = commissionById(id);
+      if (!entry) continue;
+      const selected = board.selectedId === id;
+      grid.append(el('article', { class: `commission-offer ${selected ? 'selected' : ''}` },
+        el('div', { class: 'commission-patron' }, entry.patron),
+        el('h3', {}, entry.name),
+        el('p', { class: 'hint' }, entry.text),
+        el('ul', { class: 'commission-goals' }, entry.goals.map((goal) =>
+          el('li', {}, `${goal.label} ${goal.target}${goal.metric === 'hpPercent' ? '%' : ''}`)), el('li', {}, '成功归来')),
+        el('div', { class: 'commission-payout' }, `${commissionReward(meta, entry, b.commissionGoldPlus)} 金币 · ${entry.embers} 印记 · ${entry.reputation} 声望`),
+        el('button', { class: `btn sm ${selected ? 'ghost' : 'primary'}`, onclick: () => {
+          if (app.meta !== meta || app.run || meta.night !== board.night) return;
+          if (chooseCommission(meta, selected ? null : id, 3 + b.commissionChoices)) {
+            app.save(); renderAll();
+          }
+        } }, selected ? '撤下委托' : '接下委托'),
+      ));
+    }
+    w.append(grid);
+    if (board.selectedId) w.append(el('div', { class: 'btn-row', style: { marginTop: '18px' } },
+      el('button', { class: 'btn primary', onclick: () => app.goto('select') }, '启程赴约')));
   }
 
   // ---------- 员工 ----------

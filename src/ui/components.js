@@ -16,25 +16,29 @@ export function cardEl(def, opts = {}) {
   const node = el('div', {
     class: `card ${def.type} ${size} ${def.upgraded ? 'upgraded' : ''} ${disabled ? 'disabled' : ''} ${hint ? 'playable-hint' : ''}`,
     title: opts.title || text,
-    onclick: onClick ? (e) => { e.stopPropagation(); onClick(node, e); } : null,
+    onclick: onClick ? (e) => { e.stopPropagation(); return onClick(node, e); } : null,
     onpointerenter: onHover ? () => onHover(node) : null,
   });
 
   node.append(el('div', { class: 'card-cost' + (def.cost < 0 ? ' x' : ''), text: def.cost < 0 ? 'X' : String(def.cost ?? 0) }));
   node.append(el('div', { class: `card-rarity ${def.rarity || 'common'}` }));
-  node.append(el('div', { class: 'card-art' }, def.art || def.name?.[0] || '?'));
+  node.append(el('div', { class: 'card-art' }, def.portrait
+    ? el('img', { src: def.portrait, alt: def.name, class: 'card-portrait' })
+    : def.art || def.name?.[0] || '?'));
   node.append(el('div', { class: 'card-name', text: def.name }));
   node.append(el('div', { class: 'card-type', text: TYPE_LABEL[def.type] || def.type }));
   node.append(el('div', { class: 'card-text', html: decorate(text) }));
   if (def.tags?.length) {
     node.append(el('div', { class: 'card-tags' }, def.tags.slice(0, 3).map((t) => el('span', { class: 'card-tag', text: t }))));
   }
-  if (def.exhaust) node.append(el('div', { class: 'card-badge', text: '消耗' }));
-  else if (def.ethereal) node.append(el('div', { class: 'card-badge', text: '虚无' }));
-  else if (def.innate) node.append(el('div', { class: 'card-badge', text: '起手' }));
-  if (def.unlock?.embers && !opts.hideUnlock) node.append(el('div', { class: 'card-badge', style: { bottom: '22px', right: '7px' }, text: `印记${def.unlock.embers}` }));
+  const footer = el('div', { class: 'card-footer' });
+  if (def.exhaust) footer.append(el('div', { class: 'card-badge', text: '消耗' }));
+  else if (def.ethereal) footer.append(el('div', { class: 'card-badge', text: '虚无' }));
+  else if (def.innate) footer.append(el('div', { class: 'card-badge', text: '起手' }));
+  if (def.unlock?.embers && !opts.hideUnlock) footer.append(el('div', { class: 'card-badge', text: `印记${def.unlock.embers}` }));
   if (count != null) node.append(el('div', { class: 'count-badge', text: `×${count}` }));
-  if (upgradeable) node.append(el('div', { class: 'card-badge', style: { bottom: '22px', left: '7px', right: 'auto' }, text: '可升级' }));
+  if (upgradeable) footer.append(el('div', { class: 'card-badge', text: '可升级' }));
+  node.append(footer);
   return node;
 }
 
@@ -166,6 +170,7 @@ export function relicChipEl(def, opts = {}) {
 export function potionBtnEl(def, opts = {}) {
   return el('button', {
     class: `potion-btn ${def ? '' : 'empty'}`,
+    disabled: !def || opts.disabled,
     title: def ? `${def.name}（${RARITY_LABEL[def.rarity]}）\n${def.desc}` : '空槽位',
     onclick: () => opts.onClick?.(def),
   }, def ? (def.glyph || '🧪') : '·');

@@ -1,7 +1,8 @@
 import { el, clear, delay } from '../../core/utils.js';
 import { toast, modal, popAt, flashNode, slashFx, panel } from '../fx.js';
 import { cardEl, instCardEl, combatantEl, updateCombatant, potionBtnEl, TYPE_LABEL } from '../components.js';
-import { playCard, endTurn, canPlay, cardCost, usePotion } from '../../systems/battle.js';
+import { playCard, endTurn, canPlay, cardCost, usePotion, refreshIntents, potionDisplay } from '../../systems/battle.js';
+import { cardDisplay } from '../../core/run.js';
 import { card as cardDef, potion as potionDef } from '../../data/index.js';
 
 const INTENT_NAME = {
@@ -15,12 +16,24 @@ export function renderBattle({ app, root, onDispose }) {
   if (!battle || !run) { app.goto('map'); return; }
 
   let busy = false;
+  let disposed = false;
+  let endTimer = null;
+  const isActive = () => !disposed && app.run === run && app.battle === battle;
   let targeting = null;     // {instUid, def}
   let hoveredEnemy = null;
   const nodes = { enemies: new Map(), log: null, hand: null, energy: null, piles: null, potions: null, powers: null };
 
   /* ---------- 结构 ---------- */
-  root.append(app.hud({ showDeck: true, right: el('span', { class: 'act-chip' }, battle.tier === 'boss' ? '首领战' : battle.tier === 'elite' ? '精英战' : `第 ${battle.turn} 回合`) }));
+  const makeHud = () => app.hud({ showDeck: true, right: el('span', { class: 'act-chip' }, battle.tier === 'boss' ? '首领战' : battle.tier === 'elite' ? '精英战' : `第 ${battle.turn} 回合`) });
+  let hud = makeHud();
+  root.append(hud);
+  if (battle.region) root.append(el('div', { class: 'battle-region-strip' },
+    el('b', {}, battle.region.name),
+    el('span', {}, battle.encounterName),
+    battle.siteWave ? el('b', {}, `试炼 ${battle.siteWave}`) : null,
+    el('span', { title: battle.region.rule.text }, `${battle.region.rule.name} · ${battle.region.rule.text}`),
+    battle.blessings.length ? el('span', {}, battle.blessings.map((entry) => entry.name).join(' · ')) : null,
+  ));
 
   const screen = el('div', { class: 'battle' });
   root.append(screen);
@@ -78,9 +91,10 @@ export function renderBattle({ app, root, onDispose }) {
   const handZone = el('div', { class: 'hand-zone' });
   const hand = el('div', { class: 'hand' });
   nodes.hand = hand;
+  const endTurnControl = el('button', { class: 'btn primary', onclick: onEndTurn }, '结束回合');
   handZone.append(hand);
   handZone.append(el('div', { class: 'endturn-wrap' },
-    el('button', { class: 'btn primary', onclick: onEndTurn }, '结束回合'),
+    endTurnControl,
     el('button', { class: 'btn sm ghost', onclick: () => app.openDeck() }, '牌组'),
   ));
   screen.append(handZone);
@@ -126,6 +140,8 @@ export function renderBattle({ app, root, onDispose }) {
 
   function syncPlayer() {
     const p = battle.player;
+    run.hp = p.hp;
+    run.maxHp = p.maxHp;
     const pct = p.maxHp > 0 ? Math.max(0, p.hp / p.maxHp) : 0;
     pHp.textContent = `${p.hp} / ${p.maxHp}`;
     const fill = pBar.querySelector('.hp') || pBar.appendChild(el('i', { class: 'hp' }));
@@ -144,8 +160,8 @@ export function renderBattle({ app, root, onDispose }) {
     clear(pPotions);
     for (let i = 0; i < run.potionSlots; i++) {
       const pid = run.potions[i];
-      const d = pid ? potionDef(pid) : null;
-      pPotions.append(potionBtnEl(d, { onClick: () => d && onUsePotion(d) }));
+      const d = pid ? potionDisplay(run, potionDef(pid)) : null;
+      pPotions.append(potionBtnEl(d, { disabled: busy || battle.phase !== 'player', onClick: () => d && onUsePotion(d) }));
     }
 
     // 场上力量
@@ -161,11 +177,12 @@ export function renderBattle({ app, root, onDispose }) {
   function syncHand() {
     clear(hand);
     for (const inst of battle.hand) {
-      const def = cardDef(inst.id);
+      const def = cardDisplay(run, inst);
       if (!def) continue;
       const chk = canPlay(battle, inst);
       const hint = !busy && chk.ok && (!def.target || def.target === 'enemy');
-      const node = cardEl(def, {
+      const shown = { ...def, cost: def.cost < 0 ? def.cost : cardCost(battle, def) };
+      const node = cardEl(shown, {
         disabled: !chk.ok || busy,
         hint,
         onClick: () => onCardClick(inst, def),
@@ -184,76 +201,94 @@ export function renderBattle({ app, root, onDispose }) {
   }
 
   function sync() {
+    if (!isActive()) return;
+    refreshIntents(battle);
     syncEnemies(); syncPlayer(); syncHand(); syncLog();
+    endTurnControl.disabled = busy || battle.phase !== 'player';
+    const nextHud = makeHud();
+    hud.replaceWith(nextHud);
+    hud = nextHud;
   }
 
   /* ---------- 交互 ---------- */
   function onCardClick(inst, def) {
-    if (busy || battle.phase !== 'player' || targeting) return;
+    if (!isActive() || busy || battle.phase !== 'player' || targeting) return;
+    const chk = canPlay(battle, inst);
+    if (!chk.ok) { toast(chk.why || '无法打出', 'bad'); return; }
     if (def.target === 'enemy') {
       targeting = { instUid: inst.uid, def };
       targetHint.style.display = 'grid';
       syncEnemies(); syncHand();
       return;
     }
-    doPlay(inst.uid, null);
+    return doPlay(inst.uid, null);
   }
 
   function onEnemyClick(e) {
-    if (!targeting) return;
+    if (!isActive() || busy || battle.phase !== 'player' || !targeting || e.hp <= 0) return;
     if (targeting.potion) {
       const p = targeting.potion;
       targeting = null;
       targetHint.querySelector('span').textContent = '选择一个目标';
       targetHint.style.display = 'none';
-      busy = true;
-      usePotion(battle, p.id, e.uid);
-      pump().then(async () => { busy = false; sync(); await processPending(); checkEnd(); });
-      return;
+      return resolveAction(() => usePotion(battle, p.id, e.uid));
     }
     const uid = targeting.instUid;
     targeting = null;
     targetHint.style.display = 'none';
-    doPlay(uid, e.uid);
+    return doPlay(uid, e.uid);
   }
 
-  async function doPlay(uid, targetUid) {
-    const res = playCard(battle, uid, targetUid);
-    if (!res.ok) { toast(res.why || '无法打出', 'bad'); return; }
-    busy = true; syncHand();
-    await pump();
-    busy = false;
-    sync();
-    await processPending();
-    checkEnd();
+  function doPlay(uid, targetUid) {
+    return resolveAction(() => playCard(battle, uid, targetUid));
+  }
+
+  async function resolveAction(action) {
+    if (!isActive() || busy || battle.phase !== 'player') return;
+    busy = true;
+    try {
+      sync();
+      const res = await action();
+      if (res?.ok === false) { toast(res.why || '无法使用', 'bad'); return; }
+      if (!isActive()) return;
+      sync();
+      await pump();
+      if (!isActive()) return;
+      banner.style.display = 'none';
+      sync();
+      if (checkEnd()) return;
+      await processPending();
+    } catch (e) {
+      console.error('[battle-ui]', e);
+      toast('操作未完成', 'bad');
+    } finally {
+      busy = false;
+      banner.style.display = 'none';
+      if (isActive()) { sync(); checkEnd(); }
+    }
   }
 
   async function onEndTurn() {
-    if (busy || battle.phase !== 'player') return;
-    busy = true;
-    targeting = null;
-    targetHint.style.display = 'none';
-    syncHand();
-    // 拖尾
-    for (const c of hand.children) c.style.transition = 'transform .3s ease, opacity .3s ease';
-    hand.style.transition = 'opacity .3s';
-    hand.style.opacity = '0';
-    await delay(220);
-    clear(hand);
-    hand.style.opacity = '1';
-    banner.style.display = 'grid';
-    await delay(320);
-    endTurn(battle);
-    await pump();
+    if (!isActive() || busy || battle.phase !== 'player') return;
+    cancelTargeting();
+    await resolveAction(async () => {
+      for (const c of hand.children) c.style.transition = 'transform .3s ease, opacity .3s ease';
+      hand.style.transition = 'opacity .3s';
+      hand.style.opacity = '0';
+      await delay(220);
+      if (!isActive()) return;
+      clear(hand);
+      hand.style.opacity = '1';
+      banner.style.display = 'grid';
+      await delay(320);
+      if (!isActive()) return;
+      endTurn(battle);
+    });
     banner.style.display = 'none';
-    sync();
-    busy = false;
-    await processPending();
-    checkEnd();
   }
 
   async function onUsePotion(def) {
-    if (busy || battle.phase !== 'player') return;
+    if (!isActive() || busy || battle.phase !== 'player') return;
     if (def.target === 'target') {
       targeting = { potion: def };
       targetHint.querySelector('span').textContent = '为药水选择一个目标';
@@ -261,20 +296,21 @@ export function renderBattle({ app, root, onDispose }) {
       syncEnemies();
       return;
     }
-    busy = true;
-    const res = usePotion(battle, def.id, null);
-    if (!res.ok) toast(res.why, 'bad');
-    await pump();
-    busy = false;
-    sync();
-    await processPending();
-    checkEnd();
+    cancelTargeting();
+    await resolveAction(() => usePotion(battle, def.id, null));
+  }
+
+  function cancelTargeting() {
+    targeting = null;
+    targetHint.querySelector('span').textContent = '选择一个目标';
+    targetHint.style.display = 'none';
   }
 
   // 目标型药水
   /* ---------- 预知（scry） ---------- */
   async function processPending() {
-    while (battle.pending.length) {
+    while (isActive()) {
+      if (checkEnd() || !battle.pending.length) return;
       const p = battle.pending.shift();
       if (p.kind === 'scry') {
         await doScry(p.n);
@@ -288,13 +324,15 @@ export function renderBattle({ app, root, onDispose }) {
       if (!top.length) { resolve(); return; }
       const grid = el('div', { class: 'card-grid' });
       const done = new Set();
+      let closed = false;
       const body = el('div', {},
         el('div', { class: 'hint', style: { textAlign: 'center', marginBottom: '12px' } }, `抽牌堆顶 ${top.length} 张：点击要弃掉的牌。`),
         grid,
       );
       top.forEach((inst) => {
-        const node = cardEl(cardDef(inst.id), {
+        const node = cardEl(cardDisplay(run, inst), {
           onClick: () => {
+            if (closed || !isActive() || battle.phase !== 'player') return;
             if (done.has(inst.uid)) {
               done.delete(inst.uid);
               node.classList.remove('disabled');
@@ -308,12 +346,13 @@ export function renderBattle({ app, root, onDispose }) {
       });
       modal({
         title: '预  知', sub: '窥视抽牌堆顶', body,
+        onClose: () => { closed = true; resolve(); },
         actions: [{ label: '确认', kind: 'primary', onClick: () => {
+          if (closed || !isActive() || battle.phase !== 'player') { resolve(); return; }
           for (const inst of top) {
             if (!done.has(inst.uid)) continue;
             const i = battle.draw.indexOf(inst);
-            if (i >= 0) battle.draw.splice(i, 1);
-            battle.discard.push(inst);
+            if (i >= 0) { battle.draw.splice(i, 1); battle.discard.push(inst); }
           }
           battle.log.push({ text: `你窥见了未来，弃掉了 ${done.size} 张牌。`, kind: 'info', turn: battle.turn });
           resolve();
@@ -326,8 +365,9 @@ export function renderBattle({ app, root, onDispose }) {
   async function pump() {
     const queue = battle.fx.splice(0, battle.fx.length);
     for (const f of queue) {
+      if (!isActive()) return;
       const c = findC(f.uid);
-      const node = c ? nodes.enemies.get(c.uid) : (c && c.uid === 'player' ? pNode : null);
+      const node = c?.uid === 'player' ? pNode : (c ? nodes.enemies.get(c.uid) : null);
       switch (f.type) {
         case 'damage': {
           if (node) {
@@ -361,29 +401,45 @@ export function renderBattle({ app, root, onDispose }) {
   /* ---------- 结束 ---------- */
   let ended = false;
   function checkEnd() {
-    if (ended) return;
-    if (battle.phase === 'won') {
-      ended = true;
-      setTimeout(() => app.onBattleEnd(true), 620);
-    } else if (battle.phase === 'lost') {
-      ended = true;
-      setTimeout(() => app.onBattleEnd(false), 620);
-    }
+    if (battle.phase !== 'won' && battle.phase !== 'lost') return false;
+    battle.pending.length = 0;
+    if (ended) return true;
+    ended = true;
+    const won = battle.phase === 'won';
+    endTimer = setTimeout(() => { if (isActive()) app.onBattleEnd(won); }, 620);
+    return true;
   }
 
   // 键盘：数字键出牌
   const onKey = (e) => {
-    if (busy || battle.phase !== 'player') return;
+    if (!isActive() || busy || battle.phase !== 'player') return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName) || e.target?.isContentEditable) return;
+    if (e.ctrlKey || e.altKey || e.metaKey || document.querySelector('#modal-root')?.children.length || app.root.querySelector('.deck-viewer')) return;
+    if (e.key === 'Escape') { cancelTargeting(); sync(); return; }
     const n = parseInt(e.key, 10);
     if (n >= 1 && n <= 9) {
       const inst = battle.hand[n - 1];
-      if (inst) { const def = cardDef(inst.id); if (def) onCardClick(inst, def); }
+      if (inst) { const def = cardDisplay(run, inst); if (def) onCardClick(inst, def); }
     }
     if (e.key === 'e' || e.key === 'E' || e.key === ' ') { e.preventDefault(); onEndTurn(); }
   };
   window.addEventListener('keydown', onKey);
-  onDispose(() => window.removeEventListener('keydown', onKey));
+  onDispose(() => {
+    disposed = true;
+    clearTimeout(endTimer);
+    window.removeEventListener('keydown', onKey);
+  });
 
   sync();
-  checkEnd();
+  if (!checkEnd() && battle.pending.length) {
+    busy = true;
+    sync();
+    processPending().catch((error) => {
+      console.error('[battle-ui]', error);
+      toast('操作未完成', 'bad');
+    }).finally(() => {
+      busy = false;
+      if (isActive()) { sync(); checkEnd(); }
+    });
+  }
 }
