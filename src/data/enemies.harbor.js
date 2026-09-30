@@ -52,6 +52,7 @@ export const HARBOR_ENEMIES = [
   {
     id: 'e_h_rust_harbormaster', name: '锈潮港务长', regionId: 'r_rust_quay', act: 1, tier: 'boss',
     hp: [178, 198], gold: [84, 112], glyph: '闸', color: '#537f79', size: 'large',
+    art: '/assets/enemies/e_h_rust_harbormaster.jpg',
     lore: '船都沉了，港务长仍要逐箱登记。登记过的箱子才准砸下。',
     moves: [
       { id: 'e_h_rust_harbormaster_check', name: '开闸点名', intent: 'debuff', dmg: 0, weight: 1, once: true, next: 'e_h_rust_harbormaster_winch',

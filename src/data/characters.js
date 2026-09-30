@@ -99,7 +99,7 @@ export const CHARACTERS = [
   {
     id: 'ch_lantern', name: '幽灯客', title: '替失踪的人留一盏灯',
     glyph: '灯', color: '#d4b84d', hp: 64, gold: 110,
-    portrait: '/assets/characters/lantern.svg',
+    portrait: '/assets/characters/ch_lantern.jpg',
     lore: '他的灯照不亮远处，却总能照见下一步该踩在哪里。',
     mechanic: '开战获得 1 层专注，首个玩家回合可为下一张非 X 牌减费。标记强化连射，预知整理牌序，回响重复效果。',
     relic: 'relic_lantern_wick', rewardTags: ['幽灯'],
@@ -114,7 +114,7 @@ export const CHARACTERS = [
   {
     id: 'ch_oathbound', name: '誓痕者', title: '把未偿的誓言刻进皮肤',
     glyph: '誓', color: '#ca5668', hp: 76, gold: 85,
-    portrait: '/assets/characters/oathbound.svg',
+    portrait: '/assets/characters/ch_oathbound.jpg',
     lore: '他记不清立誓那天的脸。那些伤口替他记着。',
     mechanic: '开战获得 2 层坚毅，每回合结束减 1 层。用生命换力量，低血量搏杀，汲取每打出一张攻击牌回复 1 点生命。',
     relic: 'relic_oath_seal', rewardTags: ['血誓'],

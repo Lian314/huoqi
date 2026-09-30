@@ -107,8 +107,12 @@ export function combatantEl(c, opts = {}) {
   const it = intentEl(c);
   if (it) node.append(it);
 
+  const glyphContent = (c.art || c.portrait)
+    ? el('img', { class: 'cbt-glyph-img', src: c.art || c.portrait, alt: c.name, style: { width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' } })
+    : el('span', { text: c.glyph || '?' });
+
   node.append(el('div', { class: 'cbt-head' },
-    el('div', { class: 'cbt-glyph', style: { borderColor: c.color || 'var(--line-2)' }, text: c.glyph || '?' }),
+    el('div', { class: 'cbt-glyph', style: { borderColor: c.color || 'var(--line-2)', overflow: 'hidden', padding: 0 } }, glyphContent),
     el('div', {},
       el('div', { class: 'cbt-name', text: c.name }),
       el('div', { class: 'cbt-hpnum mono', text: `${c.hp} / ${c.maxHp}` }),
