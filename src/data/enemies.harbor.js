@@ -119,6 +119,7 @@ export const HARBOR_ENEMIES = [
   {
     id: 'e_h_keel_captain', name: '空船骨舰长', regionId: 'r_ship_grave', act: 1, tier: 'boss',
     hp: [168, 192], gold: [86, 114], glyph: '舰', color: '#4a8a99', size: 'large',
+    art: '/assets/enemies/e_h_keel_captain.jpg',
     lore: '船已经倒扣，他仍站在驾驶台上，喊着不能抵达的航线。',
     moves: [
       { id: 'e_h_keel_captain_chart', name: '湿海图', intent: 'debuff', dmg: 0, weight: 1, next: 'e_h_keel_captain_pressure',
@@ -185,6 +186,7 @@ export const HARBOR_ENEMIES = [
   {
     id: 'e_h_fog_bell_prior', name: '钟雾回廊住持', regionId: 'r_bell_corridor', act: 2, tier: 'boss',
     hp: [236, 264], gold: [120, 155], glyph: '廊', color: '#ae954e', size: 'large',
+    art: '/assets/enemies/e_h_fog_bell_prior.jpg',
     lore: '住持不允许钟声停止，因为停下就会听见回廊外面的声音。',
     moves: [
       { id: 'e_h_fog_bell_prior_name', name: '雾中唱名', intent: 'debuff', dmg: 0, weight: 1, once: true, next: 'e_h_fog_bell_prior_raise',
@@ -251,6 +253,7 @@ export const HARBOR_ENEMIES = [
   {
     id: 'e_h_salt_mirror_keeper', name: '盐镜水道守印人', regionId: 'r_salt_mirror', act: 2, tier: 'boss',
     hp: [228, 256], gold: [124, 158], glyph: '印', color: '#65a9b0', size: 'large',
+    art: '/assets/enemies/e_h_salt_mirror_keeper.jpg',
     lore: '每条水道都有两份通行印，活人留一份，倒影留一份。',
     moves: [
       { id: 'e_h_salt_mirror_keeper_trace', name: '倒影录入', intent: 'debuff', dmg: 0, weight: 1, once: true, next: 'e_h_salt_mirror_keeper_aim',
