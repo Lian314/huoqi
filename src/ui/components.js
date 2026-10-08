@@ -97,35 +97,61 @@ export function combatantEl(c, opts = {}) {
   const { onClick = null, targetable = false, onHover = null } = opts;
   const sizeCls = c.size === 'large' ? 'big' : c.size === 'tall' ? 'tall' : '';
   const node = el('div', {
-    class: `combatant ${sizeCls} ${c.hp <= 0 ? 'dead' : ''} ${targetable ? 'targetable' : ''}`,
+    class: `combatant standee ${sizeCls} ${c.hp <= 0 ? 'dead' : ''} ${targetable ? 'targetable' : ''}`,
     dataset: { uid: c.uid },
     onclick: onClick ? () => onClick(c, node) : null,
     onpointerenter: onHover ? () => onHover(c, node) : null,
   });
   node._uid = c.uid;
 
+  // 1. 浮动头顶意图
   const it = intentEl(c);
   if (it) node.append(it);
 
-  const glyphContent = (c.art || c.portrait)
-    ? el('img', { class: 'cbt-glyph-img', src: c.art || c.portrait, alt: c.name, style: { width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' } })
-    : el('span', { text: c.glyph || '?' });
+  // 2. 角色立牌主体（无框/拱形剪影 + 呼吸律动）
+  const figure = el('div', { class: 'cbt-figure' });
+  const hasArt = !!(c.art || c.portrait);
+  if (hasArt) {
+    const imgWrap = el('div', { class: 'cbt-standee-frame' },
+      el('img', {
+        class: 'cbt-glyph-img cbt-standee-img',
+        src: c.art || c.portrait,
+        alt: c.name,
+      }),
+    );
+    figure.append(imgWrap);
+  } else {
+    const emblem = el('div', {
+      class: 'cbt-glyph cbt-glyph-emblem',
+      style: { borderColor: c.color || 'var(--line-2)' },
+    }, el('span', { class: 'cbt-glyph-symbol', text: c.glyph || '?' }));
+    figure.append(emblem);
+  }
 
-  node.append(el('div', { class: 'cbt-head' },
-    el('div', { class: 'cbt-glyph', style: { borderColor: c.color || 'var(--line-2)', overflow: 'hidden', padding: 0 } }, glyphContent),
-    el('div', {},
-      el('div', { class: 'cbt-name', text: c.name }),
-      el('div', { class: 'cbt-hpnum mono', text: `${c.hp} / ${c.maxHp}` }),
-    ),
+  // 瞄准锁定准星
+  figure.append(el('div', { class: 'cbt-target-reticle' }));
+
+  // 接触地面的暗影与地台
+  figure.append(el('div', { class: 'cbt-pedestal' },
+    el('div', { class: 'cbt-pedestal-shadow' }),
+    el('div', { class: 'cbt-pedestal-plate' }),
   ));
+  node.append(figure);
+
+  // 3. 单位铭牌与生命值面板
+  const vitals = el('div', { class: 'cbt-vitals' });
+  vitals.append(el('div', { class: 'cbt-name', text: c.name }));
 
   const hpPct = c.maxHp > 0 ? c.hp / c.maxHp : 0;
   const barNode = el('div', { class: 'hpbar' },
     el('i', { class: `hp ${hpPct < .34 ? 'low' : ''}`, style: { width: `${Math.max(0, hpPct * 100)}%` } }),
+    el('div', { class: 'cbt-hpnum mono', text: `${c.hp} / ${c.maxHp}` }),
   );
   if (c.block > 0) barNode.append(el('div', { class: 'blockchip', text: `⛨ ${c.block}` }));
-  node.append(barNode);
-  node.append(statusPips(c));
+  vitals.append(barNode);
+  vitals.append(statusPips(c));
+  node.append(vitals);
+
   return node;
 }
 

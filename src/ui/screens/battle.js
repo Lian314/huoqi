@@ -107,6 +107,84 @@ export function renderBattle({ app, root, onDispose }) {
   const targetHint = el('div', { class: 'target-hint', style: { display: 'none' } }, el('span', {}, '选择一个目标'));
   screen.append(targetHint);
 
+  /* ---------- 贝塞尔曲线拉线瞄准系统 ---------- */
+  const targetingSvg = el('svg', {
+    class: 'battle-targeting-svg',
+    style: {
+      position: 'absolute', inset: '0', width: '100%', height: '100%',
+      pointerEvents: 'none', zIndex: '45', display: 'none', overflow: 'visible',
+    },
+  });
+  targetingSvg.innerHTML = `
+    <defs>
+      <linearGradient id="target-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ffd43b" stop-opacity="0.9" />
+        <stop offset="50%" stop-color="#ff6b35" stop-opacity="1" />
+        <stop offset="100%" stop-color="#e03131" stop-opacity="1" />
+      </linearGradient>
+      <filter id="target-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3.5" result="glow" />
+        <feMerge>
+          <feMergeNode in="glow" />
+          <feMergeNode in="SourceGraphic" />
+        </feMerge>
+      </filter>
+    </defs>
+    <path class="targeting-line-shadow" fill="none" stroke="rgba(0,0,0,0.65)" stroke-width="8" stroke-linecap="round" />
+    <path class="targeting-line" fill="none" stroke="url(#target-grad)" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="12 7" filter="url(#target-glow)" />
+    <g class="targeting-particles"></g>
+    <polygon class="targeting-arrowhead" points="-14,-10 12,0 -14,10 -8,0" fill="#ffd43b" stroke="#e03131" stroke-width="2" filter="url(#target-glow)" />
+  `;
+  screen.append(targetingSvg);
+
+  const shadowPath = targetingSvg.querySelector('.targeting-line-shadow');
+  const curvePath = targetingSvg.querySelector('.targeting-line');
+  const arrowParticles = targetingSvg.querySelector('.targeting-particles');
+  const arrowhead = targetingSvg.querySelector('.targeting-arrowhead');
+
+  if (arrowParticles) {
+    for (let i = 0; i < 8; i++) {
+      const c = el('circle', { r: '4', fill: '#ffd43b', opacity: '0.85', filter: 'url(#target-glow)' });
+      arrowParticles.append(c);
+    }
+  }
+
+  function updateTargetingArrow(startX, startY, endX, endY) {
+    if (!targetingSvg) return;
+    targetingSvg.style.display = 'block';
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const ctrlX = startX + dx * 0.25;
+    const ctrlY = Math.min(startY, endY) - Math.max(90, Math.abs(dx) * 0.32);
+
+    const d = `M ${startX} ${startY} Q ${ctrlX} ${ctrlY} ${endX} ${endY}`;
+    shadowPath?.setAttribute('d', d);
+    curvePath?.setAttribute('d', d);
+
+    if (arrowParticles) {
+      const circles = arrowParticles.children || [];
+      for (let i = 0; i < circles.length; i++) {
+        const t = (i + 1) / (circles.length + 1);
+        const inv = 1 - t;
+        const px = inv * inv * startX + 2 * inv * t * ctrlX + t * t * endX;
+        const py = inv * inv * startY + 2 * inv * t * ctrlY + t * t * endY;
+        circles[i].setAttribute('cx', String(px));
+        circles[i].setAttribute('cy', String(py));
+        circles[i].setAttribute('r', String(3 + t * 2.5));
+      }
+    }
+
+    const t = 0.98;
+    const tx = 2 * (1 - t) * (ctrlX - startX) + 2 * t * (endX - ctrlX);
+    const ty = 2 * (1 - t) * (ctrlY - startY) + 2 * t * (endY - ctrlY);
+    const angle = Math.atan2(ty, tx) * (180 / Math.PI);
+    arrowhead?.setAttribute('transform', `translate(${endX}, ${endY}) rotate(${angle})`);
+  }
+
+  function hideTargetingArrow() {
+    if (targetingSvg) targetingSvg.style.display = 'none';
+  }
+
   /* ---------- 同步 ---------- */
   function syncEnemies() {
     const alive = battle.enemies;
@@ -191,21 +269,76 @@ export function renderBattle({ app, root, onDispose }) {
 
   function syncHand() {
     clear(hand);
-    for (const inst of battle.hand) {
+    const count = battle.hand.length;
+    battle.hand.forEach((inst, index) => {
       const def = cardDisplay(run, inst);
-      if (!def) continue;
+      if (!def) return;
       const chk = canPlay(battle, inst);
       const hint = !busy && chk.ok && (!def.target || def.target === 'enemy');
       const shown = { ...def, cost: def.cost < 0 ? def.cost : cardCost(battle, def) };
+
+      // 扇形展开与弧形物理下垂计算
+      const norm = count > 1 ? index - (count - 1) / 2 : 0;
+      const stepRot = Math.min(4.8, Math.max(2.4, 30 / (count || 1)));
+      const rot = (norm * stepRot).toFixed(2);
+      const stepY = Math.min(4.5, Math.max(1.8, 26 / (count || 1)));
+      const dipY = (Math.abs(norm) * Math.abs(norm) * stepY).toFixed(1);
+      const overlapX = (norm * -10).toFixed(1);
+      const defaultTransform = `translate3d(${overlapX}px, ${dipY}px, 0) rotate(${rot}deg)`;
+
       const node = cardEl(shown, {
         disabled: !chk.ok || busy,
         hint,
-        onClick: () => onCardClick(inst, def),
+        onClick: () => onCardClick(inst, def, node),
         onHover: () => {},
       });
       node._inst = inst;
+      node._defaultTransform = defaultTransform;
+      node._dipY = dipY;
+      node._rot = rot;
+      node._overlapX = overlapX;
+      node._handIndex = index;
+      node.style.transform = defaultTransform;
+      node.style.zIndex = String(index + 1);
+
+      if (targeting && targeting.instUid === inst.uid) {
+        node.classList.add('card-targeting-source');
+      }
+
+      // 悬停交互：抬升、回正并推开邻近手牌
+      node.addEventListener('pointerenter', () => {
+        if (targeting || busy) return;
+        node.style.transform = `translate3d(${overlapX}px, -64px, 0) rotate(0deg) scale(1.18)`;
+        node.style.zIndex = '60';
+        for (let j = 0; j < hand.children.length; j++) {
+          const sibling = hand.children[j];
+          if (sibling === node) continue;
+          const sNorm = count > 1 ? j - (count - 1) / 2 : 0;
+          const shift = j < index ? -20 : 20;
+          sibling.style.transform = `translate3d(${sNorm * -10 + shift}px, ${sibling._dipY || 0}px, 0) rotate(${sibling._rot || 0}deg)`;
+        }
+      });
+
+      node.addEventListener('pointermove', (e) => {
+        if (targeting || busy) return;
+        const r = node.getBoundingClientRect?.();
+        if (!r || !r.width || !r.height) return;
+        const nx = ((e.clientX - r.left) / r.width - 0.5) * 2;
+        const ny = ((e.clientY - r.top) / r.height - 0.5) * 2;
+        node.style.transform = `translate3d(${overlapX}px, -64px, 0) rotate(0deg) scale(1.18) perspective(600px) rotateY(${nx * 10}deg) rotateX(${-ny * 10}deg)`;
+      });
+
+      node.addEventListener('pointerleave', () => {
+        if (targeting && targeting.instUid === inst.uid) return;
+        for (let j = 0; j < hand.children.length; j++) {
+          const sibling = hand.children[j];
+          sibling.style.transform = sibling._defaultTransform || '';
+          sibling.style.zIndex = String(j + 1);
+        }
+      });
+
       hand.append(node);
-    }
+    });
   }
 
   function syncLog() {
@@ -226,32 +359,45 @@ export function renderBattle({ app, root, onDispose }) {
   }
 
   /* ---------- 交互 ---------- */
-  function onCardClick(inst, def) {
-    if (!isActive() || busy || battle.phase !== 'player' || targeting) return;
-    const chk = canPlay(battle, inst);
-    if (!chk.ok) { toast(chk.why || '无法打出', 'bad'); return; }
-    if (def.target === 'enemy') {
-      targeting = { instUid: inst.uid, def };
-      targetHint.style.display = 'grid';
+  function onCardClick(inst, def, cardNode) {
+    if (!isActive() || busy || battle.phase !== 'player') return;
+    if (targeting && targeting.instUid === inst.uid) {
+      cancelTargeting();
       syncEnemies(); syncHand();
       return;
     }
+    const chk = canPlay(battle, inst);
+    if (!chk.ok) { toast(chk.why || '无法打出', 'bad'); return; }
+    if (def.target === 'enemy') {
+      targeting = { instUid: inst.uid, def, cardNode };
+      targetHint.style.display = 'grid';
+      cardNode?.classList.add('card-targeting-source');
+      syncEnemies();
+      // 计算初始瞄准线位置
+      const cRect = cardNode?.getBoundingClientRect?.() || { left: 400, top: 600, width: 140, height: 180 };
+      const sRect = screen.getBoundingClientRect?.() || { left: 0, top: 0 };
+      const startX = cRect.left + cRect.width / 2 - sRect.left;
+      const startY = cRect.top - sRect.top;
+      const aliveList = Array.from(nodes.enemies.values()).filter((n) => !n.classList.contains('dead'));
+      const targetNode = aliveList[0];
+      const tRect = targetNode?.getBoundingClientRect?.() || { left: startX, top: startY - 260, width: 140, height: 140 };
+      const endX = tRect.left + tRect.width / 2 - sRect.left;
+      const endY = tRect.top + tRect.height / 2 - sRect.top;
+      updateTargetingArrow(startX, startY, endX, endY);
+      return;
+    }
+    cancelTargeting();
     return doPlay(inst.uid, null);
   }
 
   function onEnemyClick(e) {
     if (!isActive() || busy || battle.phase !== 'player' || !targeting || e.hp <= 0) return;
-    if (targeting.potion) {
-      const p = targeting.potion;
-      targeting = null;
-      targetHint.querySelector('span').textContent = '选择一个目标';
-      targetHint.style.display = 'none';
-      return resolveAction(() => usePotion(battle, p.id, e.uid));
+    const currentTargeting = targeting;
+    cancelTargeting();
+    if (currentTargeting.potion) {
+      return resolveAction(() => usePotion(battle, currentTargeting.potion.id, e.uid));
     }
-    const uid = targeting.instUid;
-    targeting = null;
-    targetHint.style.display = 'none';
-    return doPlay(uid, e.uid);
+    return doPlay(currentTargeting.instUid, e.uid);
   }
 
   function doPlay(uid, targetUid) {
@@ -317,6 +463,9 @@ export function renderBattle({ app, root, onDispose }) {
 
   function cancelTargeting() {
     targeting = null;
+    hideTargetingArrow();
+    for (const c of hand.children) c.classList.remove('card-targeting-source');
+    for (const [_, n] of nodes.enemies) n.classList.remove('targeted-locked');
     targetHint.querySelector('span').textContent = '选择一个目标';
     targetHint.style.display = 'none';
   }
@@ -386,10 +535,13 @@ export function renderBattle({ app, root, onDispose }) {
       switch (f.type) {
         case 'damage': {
           if (node) {
-            const { x, y } = center(node);
             popAt(node, String(f.hpLost || f.blocked || 0), 'dmg');
             flashNode(node, 'dmg');
             slashFx(node);
+            arena.classList.remove('screen-shake');
+            void arena.offsetWidth;
+            arena.classList.add('screen-shake');
+            setTimeout(() => arena.classList.remove('screen-shake'), 280);
             if (f.blocked > 0) setTimeout(() => popAt(node, `⛨${f.blocked}`, 'block'), 130);
           }
           break;
@@ -425,6 +577,70 @@ export function renderBattle({ app, root, onDispose }) {
     return true;
   }
 
+  // 鼠标 / 触控指针跟随瞄准
+  const onPointerMove = (e) => {
+    if (!isActive() || !targeting || busy) return;
+    const sRect = screen.getBoundingClientRect?.() || { left: 0, top: 0 };
+    const curX = e.clientX - sRect.left;
+    const curY = e.clientY - sRect.top;
+
+    let startX = curX;
+    let startY = curY + 200;
+    if (targeting.cardNode?.getBoundingClientRect) {
+      const cRect = targeting.cardNode.getBoundingClientRect();
+      startX = cRect.left + cRect.width / 2 - sRect.left;
+      startY = cRect.top - sRect.top;
+    }
+
+    let lockedNode = null;
+    let endX = curX;
+    let endY = curY;
+    for (const [uid, node] of nodes.enemies) {
+      if (node.classList?.contains?.('dead') || !node.getBoundingClientRect) continue;
+      const nRect = node.getBoundingClientRect();
+      if (e.clientX >= nRect.left && e.clientX <= nRect.right && e.clientY >= nRect.top && e.clientY <= nRect.bottom) {
+        lockedNode = node;
+        endX = nRect.left + nRect.width / 2 - sRect.left;
+        endY = nRect.top + nRect.height / 2 - sRect.top;
+        break;
+      }
+    }
+
+    for (const [_, node] of nodes.enemies) {
+      node.classList?.toggle?.('targeted-locked', node === lockedNode);
+    }
+
+    updateTargetingArrow(startX, startY, endX, endY);
+  };
+
+  const onPointerUp = (e) => {
+    if (!isActive() || !targeting || busy) return;
+    for (const [uid, node] of nodes.enemies) {
+      if (node.classList?.contains?.('dead') || !node.getBoundingClientRect) continue;
+      const nRect = node.getBoundingClientRect();
+      if (e.clientX >= nRect.left && e.clientX <= nRect.right && e.clientY >= nRect.top && e.clientY <= nRect.bottom) {
+        const enemy = battle.enemies.find((en) => en.uid === uid);
+        if (enemy && enemy.hp > 0) {
+          onEnemyClick(enemy);
+          return;
+        }
+      }
+    }
+  };
+
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+
+  arena.addEventListener('click', (e) => {
+    if (e.target === arena || e.target.classList?.contains?.('arena-band')) {
+      if (targeting) {
+        cancelTargeting();
+        syncEnemies();
+        syncHand();
+      }
+    }
+  });
+
   // 键盘：数字键出牌
   const onKey = (e) => {
     if (!isActive() || busy || battle.phase !== 'player') return;
@@ -443,6 +659,8 @@ export function renderBattle({ app, root, onDispose }) {
     disposed = true;
     clearTimeout(endTimer);
     window.removeEventListener('keydown', onKey);
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup', onPointerUp);
   });
 
   sync();
