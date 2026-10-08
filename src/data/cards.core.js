@@ -9,14 +9,17 @@ export const CARDS_CORE = [
   // 固定 5 张 —— events.js / potions.js / relics.js / enemies.js 引用其 id
   // ============================================================
   { id:'c_strike', name:'挥击', type:'attack', rarity:'common', cost:1, target:'enemy', tags:['打击'],
+    portrait:'/assets/cards/c_strike.jpg',
     text:'造成 6 点伤害。', effects:[{op:'damage', v:6}],
     upgrade:{ text:'造成 9 点伤害。', effects:[{op:'damage', v:9}] } },
 
   { id:'c_bash', name:'重击', type:'attack', rarity:'common', cost:2, target:'enemy', tags:['打击'],
+    portrait:'/assets/cards/c_bash.jpg',
     text:'造成 8 点伤害。施加 2 层易伤。', effects:[{op:'damage', v:8},{op:'debuff', s:'vulnerable', v:2, t:'target'}],
     upgrade:{ cost:1, text:'造成 11 点伤害。施加 2 层易伤。', effects:[{op:'damage', v:11},{op:'debuff', s:'vulnerable', v:2, t:'target'}] } },
 
   { id:'c_guard', name:'格挡', type:'skill', rarity:'common', cost:1, target:'self', tags:['防御'],
+    portrait:'/assets/cards/c_guard.jpg',
     text:'获得 5 点格挡。', effects:[{op:'block', v:5}],
     upgrade:{ cost:0, text:'获得 8 点格挡。', effects:[{op:'block', v:8}] } },
 
