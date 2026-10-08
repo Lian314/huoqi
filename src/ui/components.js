@@ -22,11 +22,11 @@ export function cardEl(def, opts = {}) {
 
   node.append(el('div', { class: 'card-cost' + (def.cost < 0 ? ' x' : ''), text: def.cost < 0 ? 'X' : String(def.cost ?? 0) }));
   node.append(el('div', { class: `card-rarity ${def.rarity || 'common'}` }));
+  node.append(el('div', { class: 'card-name', text: def.name }));
+  node.append(el('div', { class: 'card-type', text: TYPE_LABEL[def.type] || def.type }));
   node.append(el('div', { class: 'card-art' }, def.portrait
     ? el('img', { src: def.portrait, alt: def.name, class: 'card-portrait' })
     : def.art || def.name?.[0] || '?'));
-  node.append(el('div', { class: 'card-name', text: def.name }));
-  node.append(el('div', { class: 'card-type', text: TYPE_LABEL[def.type] || def.type }));
   node.append(el('div', { class: 'card-text', html: decorate(text) }));
   if (def.tags?.length) {
     node.append(el('div', { class: 'card-tags' }, def.tags.slice(0, 3).map((t) => el('span', { class: 'card-tag', text: t }))));

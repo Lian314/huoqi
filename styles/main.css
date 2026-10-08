@@ -124,9 +124,14 @@ button:disabled { cursor: not-allowed; }
 /* ---------------- HUD ---------------- */
 .hud {
   display: flex; align-items: center; gap: 14px;
-  padding: 9px 16px;
-  background: linear-gradient(180deg, rgba(10,12,15,.96), rgba(10,12,15,.72));
-  border-bottom: 1px solid var(--line);
+  padding: 10px 20px;
+  background-color: rgba(10,12,15,.94);
+  background-image: url('../assets/ui/ui_hud_bar.jpg');
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-bottom: 2px solid #3c4450;
+  box-shadow: 0 4px 20px rgba(0,0,0,.65);
   backdrop-filter: blur(8px);
   flex-wrap: wrap;
   z-index: 20;
@@ -216,11 +221,16 @@ button:disabled { cursor: not-allowed; }
 
 /* ---------------- 面板 ---------------- */
 .panel {
-  background: var(--panel); border: 1px solid var(--line);
-  border-radius: var(--r-lg); padding: 18px 20px;
+  background-color: var(--panel);
+  background-image: url('../assets/ui/ui_panel_frame.jpg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 2px solid #4a3e2c;
+  border-radius: var(--r-lg);
+  padding: 22px 24px;
   box-shadow: var(--shadow);
 }
-.panel.tight { padding: 13px 16px; }
+.panel.tight { padding: 14px 18px; }
 .panel h3 {
   margin: 0 0 12px; font-size: 14px; letter-spacing: 2.5px; color: var(--ember-2);
   font-weight: 700; text-transform: uppercase;
@@ -255,13 +265,16 @@ button:disabled { cursor: not-allowed; }
 /* ---------------- 卡牌 ---------------- */
 .card {
   position: relative;
-  width: 150px; min-height: 208px;
-  border-radius: 12px;
-  padding: 9px 9px 8px;
-  display: flex; flex-direction: column; gap: 6px;
-  background: linear-gradient(165deg, var(--t-skill-2), #0e1218);
-  border: 1px solid var(--line-2);
-  box-shadow: 0 6px 18px rgba(0,0,0,.5);
+  width: 156px; height: 218px;
+  border-radius: 10px;
+  padding: 8px 8px 6px;
+  display: flex; flex-direction: column; gap: 4px;
+  background-color: #121820;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  border: 1px solid rgba(255, 255, 255, .15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .6);
   transition: transform .16s ease, box-shadow .16s ease, border-color .16s;
   user-select: none; flex: 0 0 auto;
   cursor: pointer;
@@ -269,54 +282,91 @@ button:disabled { cursor: not-allowed; }
 }
 .card::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(ellipse 70% 45% at 50% 0%, rgba(255,255,255,.1), transparent 70%);
+  background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(255,255,255,.08), transparent 70%);
   pointer-events: none;
 }
-.card.attack { background: linear-gradient(165deg, var(--t-attack), var(--t-attack-2)); }
-.card.skill  { background: linear-gradient(165deg, var(--t-skill), var(--t-skill-2)); }
-.card.power  { background: linear-gradient(165deg, var(--t-power), var(--t-power-2)); }
-.card.curse  { background: linear-gradient(165deg, var(--t-curse), var(--t-curse-2)); border-color: rgba(151,117,250,.25); }
-.card:hover { transform: translateY(-8px) scale(1.04); box-shadow: 0 18px 40px rgba(0,0,0,.6); border-color: rgba(255,255,255,.35); z-index: 5; }
+.card.attack { background-image: url('../assets/ui/frame_card_attack.jpg'); border-color: rgba(224, 49, 49, .4); }
+.card.skill  { background-image: url('../assets/ui/frame_card_skill.jpg'); border-color: rgba(46, 196, 182, .4); }
+.card.power  { background-image: url('../assets/ui/frame_card_power.jpg'); border-color: rgba(151, 117, 250, .4); }
+.card.curse  { background-image: url('../assets/ui/frame_card_curse.jpg'); border-color: rgba(116, 184, 22, .35); }
+.card:hover { transform: translateY(-8px) scale(1.05); box-shadow: 0 18px 40px rgba(0,0,0,.7); border-color: rgba(255,255,255,.5); z-index: 5; }
 .card.disabled { opacity: .5; filter: grayscale(.4); }
 .card.disabled:hover { transform: none; }
-.card.playable-hint { border-color: var(--ember-2); box-shadow: 0 0 0 1px rgba(255,159,67,.4), 0 6px 18px rgba(0,0,0,.5); }
+.card.playable-hint { border-color: var(--ember-2); box-shadow: 0 0 0 1px rgba(255,159,67,.6), 0 0 16px rgba(255,107,53,.4); }
 
 .card-cost {
-  position: absolute; top: -8px; left: -8px;
-  width: 30px; height: 30px; border-radius: 50%;
+  position: absolute; top: 6px; left: 6px;
+  width: 32px; height: 32px; border-radius: 50%;
   display: grid; place-items: center;
-  font-family: var(--font-num); font-weight: 800; font-size: 15px;
-  background: radial-gradient(circle at 34% 28%, #fff3d6, #e5a50a 60%, #8a6400);
-  color: #2a1c00; border: 1.5px solid rgba(0,0,0,.5);
-  box-shadow: 0 3px 8px rgba(0,0,0,.5); z-index: 2;
+  font-family: var(--font-num); font-weight: 800; font-size: 16px;
+  background: radial-gradient(circle at 35% 30%, #fff3d6, #e5a50a 60%, #684800);
+  color: #201300; border: 1.5px solid rgba(255, 225, 120, .8);
+  box-shadow: 0 0 10px rgba(229,165,10,.6), inset 0 1px 3px rgba(255,255,255,.7);
+  z-index: 3;
+}
+.card.attack .card-cost {
+  background: radial-gradient(circle at 35% 30%, #ffd6d6, #d93829 60%, #5c1109);
+  color: #fff; border-color: rgba(255, 120, 120, .8);
+  box-shadow: 0 0 10px rgba(217, 56, 41, .7), inset 0 1px 2px rgba(255,255,255,.6);
+}
+.card.skill .card-cost {
+  background: radial-gradient(circle at 35% 30%, #d8f5fc, #1b85b8 60%, #0d3852);
+  color: #fff; border-color: rgba(120, 215, 255, .8);
+  box-shadow: 0 0 10px rgba(27, 133, 184, .7), inset 0 1px 2px rgba(255,255,255,.6);
+}
+.card.power .card-cost {
+  background: radial-gradient(circle at 35% 30%, #f1dcff, #7f38c7 60%, #351159);
+  color: #fff; border-color: rgba(210, 140, 255, .8);
+  box-shadow: 0 0 10px rgba(127, 56, 199, .7), inset 0 1px 2px rgba(255,255,255,.6);
+}
+.card.curse .card-cost {
+  background: radial-gradient(circle at 35% 30%, #d8fcd6, #418a28 60%, #17380d);
+  color: #e5ffe0; border-color: rgba(120, 240, 120, .7);
+  box-shadow: 0 0 10px rgba(65, 138, 40, .7), inset 0 1px 2px rgba(255,255,255,.6);
 }
 .card-cost.x { font-size: 15px; }
+
 .card-art {
-  height: 54px; margin-top: 10px; border-radius: 8px;
+  height: 60px; margin: 4px 8px 1px; border-radius: 4px;
   display: grid; place-items: center; font-size: 26px;
-  background: rgba(0,0,0,.3); border: 1px solid rgba(255,255,255,.1);
-  flex: 0 0 auto;
+  background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12);
+  box-shadow: inset 0 2px 6px rgba(0,0,0,.7);
+  flex: 0 0 auto; overflow: hidden;
 }
-.card-name { font-size: 13.5px; font-weight: 700; text-align: center; line-height: 1.25; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.6); }
-.card-type { font-size: 10px; text-align: center; color: rgba(255,255,255,.5); letter-spacing: 2px; margin-top: -3px; }
-.card-text { font-size: 11.5px; line-height: 1.4; color: rgba(255,255,255,.86); flex: 1; overflow: hidden; }
+.card-art .card-portrait { width: 100%; height: 100%; object-fit: cover; }
+.card-name {
+  margin-left: 28px; margin-top: 1px;
+  font-size: 13px; font-weight: 700; text-align: center; line-height: 1.2;
+  color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.9), 0 0 8px rgba(0,0,0,.9);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-type {
+  font-size: 9.5px; text-align: center; color: rgba(255,255,255,.68);
+  letter-spacing: 1.5px; margin-left: 28px; margin-top: -2px;
+}
+.card-text {
+  font-size: 11px; line-height: 1.35; color: rgba(240,244,248,.95);
+  text-shadow: 0 1px 2px rgba(0,0,0,.9);
+  flex: 1; overflow-y: auto; padding: 4px 6px; margin: 2px 5px 3px;
+  background: rgba(12,16,22,.55); border-radius: 4px;
+}
 .card-text b { color: #fff; }
 .card-text em { color: #ffd43b; font-style: normal; font-weight: 700; }
 .card-tags { display: flex; gap: 3px; flex-wrap: wrap; justify-content: center; }
-.card-tag { font-size: 9.5px; padding: 0 5px; border-radius: 4px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.62); }
-.card-rarity { position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; z-index: 2; }
+.card-tag { font-size: 9px; padding: 0 4px; border-radius: 3px; background: rgba(255,255,255,.12); color: rgba(255,255,255,.75); }
+.card-rarity { position: absolute; top: 7px; right: 8px; width: 8px; height: 8px; border-radius: 50%; z-index: 2; }
 .card-rarity.common { background: #8b96a5; }
 .card-rarity.uncommon { background: #4ea8de; box-shadow: 0 0 6px rgba(78,168,222,.8); }
 .card-rarity.rare { background: #e5a50a; box-shadow: 0 0 8px rgba(229,165,10,.9); }
 .card-rarity.special { background: #c77dff; box-shadow: 0 0 9px rgba(199,125,255,.9); }
 .card-rarity.curse { background: #6c5a80; }
 .card-badge {
-  position: absolute; bottom: 6px; right: 7px; font-size: 9px; padding: 1px 5px; border-radius: 4px;
-  background: rgba(229,165,10,.2); border: 1px solid rgba(229,165,10,.5); color: var(--sulfur);
+  position: absolute; bottom: 5px; right: 7px; font-size: 9px; padding: 1px 5px; border-radius: 4px;
+  background: rgba(229,165,10,.25); border: 1px solid rgba(229,165,10,.6); color: var(--sulfur);
 }
-.card-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; min-height: 16px; flex: 0 0 auto; }
+.card-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; min-height: 14px; flex: 0 0 auto; margin-right: 4px; margin-bottom: 2px; }
 .card-footer .card-badge { position: static; }
-.card.upgraded { border-color: rgba(229,165,10,.55); box-shadow: 0 6px 18px rgba(0,0,0,.5), 0 0 14px rgba(229,165,10,.2); }
+.card.upgraded { border-color: rgba(255,215,0,.75); box-shadow: 0 6px 18px rgba(0,0,0,.6), 0 0 16px rgba(255,190,0,.45); }
 
 .card-grid { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
 .card-grid .card { margin: 0; }
@@ -325,18 +375,18 @@ button:disabled { cursor: not-allowed; }
   position: absolute; right: -6px; top: -6px; min-width: 22px; height: 22px; padding: 0 5px;
   border-radius: 11px; background: #2b3340; border: 1px solid var(--line-2);
   display: grid; place-items: center; font-family: var(--font-num); font-size: 12px; font-weight: 700;
-  z-index: 3;
+  z-index: 4;
 }
 
 /* 卡牌详情放大 */
 .card-detail {
-  width: 300px; min-height: 396px; transform-origin: center;
+  width: 280px; min-height: 390px; transform-origin: center;
 }
-.card-detail .card-name { font-size: 19px; }
-.card-detail .card-text { font-size: 14px; line-height: 1.55; }
-.card-detail .card-art { height: 108px; font-size: 48px; }
-.card-detail .card-cost { width: 42px; height: 42px; font-size: 21px; top: -11px; left: -11px; }
-.card-detail .card-type { font-size: 11.5px; }
+.card-detail .card-name { font-size: 18px; margin-left: 44px; margin-top: 4px; }
+.card-detail .card-type { font-size: 12px; margin-left: 44px; }
+.card-detail .card-text { font-size: 13.5px; line-height: 1.5; padding: 8px 10px; margin: 4px 10px 6px; }
+.card-detail .card-art { height: 110px; font-size: 48px; margin: 6px 12px 4px; }
+.card-detail .card-cost { width: 44px; height: 44px; font-size: 22px; top: 9px; left: 9px; }
 
 /* ---------------- 战斗 ---------------- */
 .battle {
@@ -358,10 +408,13 @@ button:disabled { cursor: not-allowed; }
 .enemy-row { display: flex; gap: 26px; align-items: flex-end; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2; margin-top: 16px; }
 
 .combatant {
-  width: 168px; padding: 10px 11px 11px; border-radius: var(--r);
-  background: linear-gradient(180deg, rgba(22,28,36,.9), rgba(12,16,21,.92));
-  border: 1px solid var(--line-2);
-  box-shadow: var(--shadow-sm);
+  width: 172px; padding: 11px 12px 12px; border-radius: var(--r);
+  background-color: rgba(18,24,32,.95);
+  background-image: url('../assets/ui/ui_combatant_plate.jpg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid #4a3e2e;
+  box-shadow: var(--shadow-sm), inset 0 0 15px rgba(0,0,0,.6);
   transition: transform .2s ease, box-shadow .2s, border-color .2s, opacity .3s;
   position: relative;
 }
@@ -421,30 +474,43 @@ button:disabled { cursor: not-allowed; }
 .status-pip .n { font-family: var(--font-num); }
 
 .player-panel {
-  position: absolute; left: 16px; bottom: 12px; width: 218px;
-  background: var(--panel); border: 1px solid var(--line-2);
-  border-radius: var(--r); padding: 11px 12px; box-shadow: var(--shadow);
+  position: absolute; left: 16px; bottom: 12px; width: 224px;
+  background-color: var(--panel);
+  background-image: url('../assets/ui/ui_panel_frame.jpg');
+  background-size: 100% 100%;
+  border: 1px solid #4a3e2c;
+  border-radius: var(--r); padding: 12px 14px; box-shadow: var(--shadow);
   z-index: 4;
 }
 .energy-orb {
   position: absolute; right: -16px; top: -16px;
-  width: 62px; height: 62px; border-radius: 50%;
+  width: 68px; height: 68px; border-radius: 50%;
   display: grid; place-items: center;
-  background: radial-gradient(circle at 34% 28%, #fff2c9, #e5a50a 52%, #6b4a00);
-  border: 2px solid rgba(0,0,0,.55);
-  box-shadow: 0 0 26px rgba(229,165,10,.5), inset 0 -5px 12px rgba(0,0,0,.35);
-  font-family: var(--font-num); font-weight: 800; font-size: 25px; color: #2b1c00;
+  background-color: #2b180d;
+  background-image: url('../assets/ui/ui_energy_reactor.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 2px solid #5a3e1b;
+  box-shadow: 0 0 24px rgba(255,107,53,.7), inset 0 0 8px rgba(0,0,0,.8);
+  font-family: var(--font-num); font-weight: 800; font-size: 26px; color: #fff2c9;
+  text-shadow: 0 2px 4px rgba(0,0,0,.95), 0 0 12px rgba(255,107,53,.85);
   z-index: 5;
 }
-.energy-orb small { font-size: 10px; opacity: .7; }
+.energy-orb small { font-size: 11px; opacity: .8; text-shadow: none; }
 
 .piles { display: flex; gap: 8px; margin-top: 9px; }
 .pile {
-  flex: 1; text-align: center; padding: 5px 2px; border-radius: var(--r-sm);
-  background: rgba(0,0,0,.3); border: 1px solid var(--line);
-  font-size: 11px; color: var(--fg-dim);
+  flex: 1; text-align: center; padding: 6px 4px; border-radius: var(--r-sm);
+  background-color: rgba(10,14,18,.8);
+  background-image: url('../assets/ui/ui_card_back.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 1px solid #4a3d2c;
+  box-shadow: inset 0 0 10px rgba(0,0,0,.7);
+  font-size: 11px; color: #e6e9ee;
+  text-shadow: 0 1px 3px rgba(0,0,0,.9);
 }
-.pile b { display: block; font-family: var(--font-num); font-size: 16px; color: var(--fg); }
+.pile b { display: block; font-family: var(--font-num); font-size: 16px; color: var(--gold); text-shadow: 0 1px 4px rgba(0,0,0,.9); }
 
 /* 手牌 */
 .hand-zone {
@@ -463,6 +529,25 @@ button:disabled { cursor: not-allowed; }
 .hand .card.dragging { opacity: .4; }
 
 .endturn-wrap { position: absolute; right: 18px; bottom: 14px; z-index: 8; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.endturn-wrap .btn.primary {
+  width: 132px; height: 48px;
+  background-color: #2b1810;
+  background-image: url('../assets/ui/ui_btn_endturn.jpg');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid #63361a;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(255,107,53,.45);
+  color: #fff2c9; font-size: 15px; font-weight: 800;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,.95), 0 0 10px rgba(255,107,53,.8);
+  transition: transform .14s ease, filter .14s ease, box-shadow .14s ease;
+}
+.endturn-wrap .btn.primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.2);
+  box-shadow: 0 8px 28px rgba(255,107,53,.65);
+}
 
 /* 战斗日志 */
 .battle-log {
