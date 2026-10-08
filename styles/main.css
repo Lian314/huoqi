@@ -127,9 +127,11 @@ button:disabled { cursor: not-allowed; }
   padding: 8px 24px;
   min-height: 52px;
   background-color: #0d1016;
-  background-image: url('../assets/ui/ui_hud_bar.jpg');
-  background-position: center top;
-  background-size: auto 100%;
+  background-image:
+    linear-gradient(90deg, rgba(13,16,22,0.95) 0%, rgba(13,16,22,0.4) 15%, rgba(13,16,22,0.4) 85%, rgba(13,16,22,0.95) 100%),
+    url('../assets/ui/ui_hud_bar.jpg');
+  background-position: center;
+  background-size: cover;
   background-repeat: no-repeat;
   border-bottom: 2px solid #4a3e2c;
   box-shadow: 0 6px 24px rgba(0,0,0,.75);
@@ -175,11 +177,12 @@ button:disabled { cursor: not-allowed; }
 .relic-chip.boss { border-color: #b3392f; box-shadow: 0 0 12px rgba(224,49,49,.35); }
 .relic-chip.starter { border-color: #6b7684; }
 
-.potion-strip { display: flex; gap: 5px; }
+.potion-strip { display: flex; gap: 6px; align-items: center; }
 .potion-btn {
-  width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 15px;
-  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.16), rgba(0,0,0,.4));
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 18px;
+  background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.18), rgba(0,0,0,.45));
   border: 1px solid var(--line-2); transition: transform .14s ease, filter .14s;
+  cursor: pointer; touch-action: manipulation;
 }
 .potion-btn:hover { transform: scale(1.12); filter: brightness(1.2); }
 .potion-btn.empty { opacity: .28; }
@@ -223,13 +226,16 @@ button:disabled { cursor: not-allowed; }
 /* ---------------- 面板 ---------------- */
 .panel {
   background-color: var(--panel);
-  background-image: url('../assets/ui/ui_panel_frame.jpg');
-  background-size: 100% 100%;
+  background-image:
+    linear-gradient(180deg, rgba(18,24,32,0.88) 0%, rgba(12,16,22,0.95) 100%),
+    url('../assets/ui/ui_panel_frame.jpg');
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
   border: 2px solid #4a3e2c;
   border-radius: var(--r-lg);
   padding: 22px 24px;
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 0 20px rgba(0,0,0,.6), var(--shadow);
 }
 .panel.tight { padding: 14px 18px; }
 .panel h3 {
@@ -237,7 +243,29 @@ button:disabled { cursor: not-allowed; }
   font-weight: 700; text-transform: uppercase;
   display: flex; align-items: center; gap: 9px;
 }
-.panel h3::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(255,159,67,.35), transparent); }
+.title-hero-emblem {
+  width: 104px; height: 104px; margin: 0 auto 16px;
+  border-radius: 50%;
+  background-color: #2b180d;
+  background-image:
+    radial-gradient(circle at 35% 30%, rgba(255,243,214,.9), rgba(255,107,53,.7) 45%, rgba(43,24,13,.95) 80%),
+    url('../assets/ui/ui_energy_reactor.jpg');
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #ffd43b;
+  box-shadow: 0 0 36px rgba(255,107,53,.7), 0 0 16px rgba(229,165,10,.6), inset 0 0 16px rgba(0,0,0,.8);
+  display: grid; place-items: center;
+  transition: transform .3s ease;
+  animation: ember-float 4s ease-in-out infinite alternate;
+}
+.title-emblem-core {
+  font-size: 46px;
+  filter: drop-shadow(0 0 12px rgba(255,212,59,0.9));
+}
+@keyframes ember-float {
+  0% { transform: translateY(0) scale(0.98); box-shadow: 0 0 24px rgba(255,107,53,.5), 0 0 10px rgba(229,165,10,.4); }
+  100% { transform: translateY(-4px) scale(1.02); box-shadow: 0 0 46px rgba(255,107,53,.85), 0 0 22px rgba(229,165,10,.7); }
+}
 
 .title-xl {
   font-family: var(--font-display); font-size: 42px; letter-spacing: 10px;
@@ -328,11 +356,12 @@ button:disabled { cursor: not-allowed; }
 .card-cost.x { font-size: 16px; }
 
 .card-art {
-  height: 72px; margin: 4px 8px 1px; border-radius: 5px;
+  height: 74px; margin: 4px 8px 1px; border-radius: 5px;
   display: grid; place-items: center; font-size: 26px;
-  background: radial-gradient(circle at 50% 45%, #2a2016 0%, #0d1016 75%);
+  background-color: #0b0e14;
+  background: radial-gradient(circle at 50% 45%, #2a2016 0%, #0b0e14 75%);
   border: 1px solid #5a4628;
-  box-shadow: inset 0 2px 8px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.6);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,.9), 0 1px 3px rgba(0,0,0,.6);
   flex: 0 0 auto; overflow: hidden;
   color: #ffd43b; font-family: var(--font-display);
   text-shadow: 0 0 10px rgba(255,212,59,.5), 0 2px 4px rgba(0,0,0,.9);
@@ -354,8 +383,11 @@ button:disabled { cursor: not-allowed; }
   font-size: 12px; line-height: 1.45; color: rgba(242,246,250,.98);
   text-shadow: 0 1px 2px rgba(0,0,0,.95);
   flex: 1; overflow-y: auto; padding: 5px 8px; margin: 2px 5px 3px;
-  background: rgba(10,14,20,.65); border-radius: 5px;
-  border: 1px solid rgba(255,255,255,.06);
+  background-color: #0e131b;
+  background: rgba(14, 19, 27, 0.94);
+  border-radius: 5px;
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 4px rgba(0,0,0,.6);
 }
 .card-text b { color: #fff; font-weight: 700; }
 .card-text em { color: #ffd43b; font-style: normal; font-weight: 800; text-shadow: 0 0 6px rgba(255,212,59,.4); }
@@ -582,7 +614,8 @@ button:disabled { cursor: not-allowed; }
   width: 136px; height: 50px;
   background-color: #2b1810;
   background-image: url('../assets/ui/ui_btn_endturn.jpg');
-  background-size: 100% 100%;
+  background-size: cover;
+  background-position: center;
   background-repeat: no-repeat;
   border: 1px solid #63361a;
   border-radius: 10px;
@@ -833,7 +866,12 @@ button:disabled { cursor: not-allowed; }
 .card-portrait { width: 100%; height: 100%; object-fit: cover; object-position: center 28%; }
 
 @media (max-width: 860px) {
-  .card { width: 124px; min-height: 178px; }
+  .card { width: 124px; height: 176px; min-height: 176px; padding: 7px 7px 5px; }
+  .card-art { height: 50px; font-size: 22px; margin: 3px 6px 1px; }
+  .card-name { font-size: 12px; margin-left: 30px; }
+  .card-type { font-size: 9px; margin-left: 30px; }
+  .card-cost { width: 30px; height: 30px; font-size: 15px; top: 6px; left: 6px; }
+  .card-text { font-size: 11px; line-height: 1.4; padding: 4px 6px; }
   .hand { padding: 0 8px; }
   .hand .card { margin: 0 -30px; }
   .hand .card:hover { transform: translateY(-36px) scale(1.1); }
@@ -846,15 +884,41 @@ button:disabled { cursor: not-allowed; }
   .enemy-row { gap: 12px; }
 }
 @media (max-width: 560px) {
-  .card { width: 104px; min-height: 152px; padding: 7px; }
-  .card-art { height: 38px; font-size: 19px; }
-  .card-text { font-size: 10px; }
+  .card { width: 104px; height: 148px; min-height: 148px; padding: 6px 6px 4px; }
+  .card-name { font-size: 11px; margin-left: 28px; }
+  .card-type { font-size: 8.5px; margin-left: 28px; }
+  .card-cost { width: 26px; height: 26px; font-size: 13px; top: 5px; left: 5px; }
+  .card-art { height: 40px; font-size: 18px; margin: 2px 4px 1px; }
+  .card-text { font-size: 9.5px; line-height: 1.35; padding: 3px 5px; margin: 1px 3px 2px; }
+  .potion-btn { width: 42px; height: 42px; font-size: 20px; }
   .battle { overflow-y: auto; overflow-x: hidden; }
   .battle-arena { flex: 1 0 auto; min-height: 390px; padding-bottom: 220px; }
   .hand-zone { height: auto; min-height: 340px; flex-direction: column; align-items: stretch; gap: 8px; padding: 0 8px 10px; }
   .hand { height: auto; min-height: 280px; flex: 0 0 auto; padding: 0; }
   .hand .card { margin: 0 -40px; }
   .endturn-wrap { position: static; flex-direction: row; justify-content: flex-end; align-items: center; flex: 0 0 auto; }
+}
+@media (max-height: 520px) {
+  .hud { min-height: 40px; padding: 4px 14px; gap: 8px; font-size: 13px; }
+  .hud-brand { font-size: 14px; }
+  .potion-btn { width: 34px; height: 34px; font-size: 16px; }
+  .battle-arena { padding: 6px 12px 8px; min-height: 0; }
+  .arena-band { height: 32%; }
+  .enemy-row { gap: 10px; margin-bottom: 8px; margin-top: auto; }
+  .combatant { width: 128px; padding: 6px 8px; }
+  .combatant-portrait { height: 68px; }
+  .hand-zone { height: 142px; padding-bottom: 4px; }
+  .hand .card { width: 94px; height: 134px; min-height: 134px; margin: 0 -22px; padding: 4px; }
+  .hand .card:hover { transform: translateY(-24px) scale(1.1); margin: 0 4px; }
+  .hand .card .card-cost { width: 24px; height: 24px; font-size: 12px; top: 4px; left: 4px; }
+  .hand .card .card-name { font-size: 10.5px; margin-left: 24px; }
+  .hand .card .card-type { font-size: 8px; margin-left: 24px; }
+  .hand .card .card-art { height: 36px; font-size: 16px; }
+  .hand .card .card-text { font-size: 9px; line-height: 1.3; padding: 2px 4px; }
+  .player-panel { width: 144px; left: 8px; bottom: 6px; padding: 6px 8px; }
+  .energy-orb { width: 44px; height: 44px; font-size: 17px; right: -8px; top: -8px; }
+  .endturn-wrap { right: 8px; bottom: 6px; }
+  .endturn-wrap .btn.primary { width: 110px; height: 38px; font-size: 13px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

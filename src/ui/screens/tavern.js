@@ -7,7 +7,7 @@ import {
 import {
   bonuses, nightlyIncome, facilityCost, upgradeFacility, hireStaff, dismissStaff,
   upgradeCost, buyUpgrade, facilityDesc, nightFlavor, isFinalNight, MAX_NIGHT,
-  tideDamage, newMeta,
+  tideDamage, newMeta, wipeMeta,
 } from '../../systems/meta.js';
 import { ALL_CHARACTERS, ALL_CARDS, ALL_RELICS, RARITY_LABEL } from '../../data/index.js';
 import { cardEl } from '../components.js';
@@ -130,7 +130,10 @@ export function renderTavern({ app, root, params }) {
     else if (tab === 'record') renderRecord(w);
   }
 
-  function restart() {
+  async function restart() {
+    const ok = await confirmDialog('确定要重新点灯吗？', '这将会重置当前全部局外建筑、图鉴与传承进度，重归第一夜。此操作不可撤销！', '清空重置', 'danger');
+    if (!ok) return;
+    wipeMeta();
     app.meta = newMeta();
     app.run = null;
     app.battle = null;

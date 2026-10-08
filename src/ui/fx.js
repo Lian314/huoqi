@@ -60,8 +60,13 @@ export function modal({ title, sub, body, actions = [], onClose, wide = false, d
   const root = $('#modal-root');
   if (!root) return () => {};
   const content = el('div', { class: 'modal' });
+  content.setAttribute('role', 'dialog');
+  content.setAttribute('aria-modal', 'true');
   if (wide) content.style.width = 'min(860px, 96vw)';
-  if (title) content.append(el('h2', { text: title }));
+  if (title) {
+    content.append(el('h2', { text: title }));
+    content.setAttribute('aria-label', title);
+  }
   if (sub) content.append(el('div', { class: 'modal-sub', text: sub }));
   if (body) content.append(typeof body === 'string' ? el('div', { html: body }) : body);
 
@@ -80,9 +85,40 @@ export function modal({ title, sub, body, actions = [], onClose, wide = false, d
   root.append(mask);
   modalStack.push(close);
 
+  const prevFocused = (typeof document !== 'undefined') ? document.activeElement : null;
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Tab') {
+      const btns = Array.from(content.querySelectorAll('button') || []).filter((b) => !b.disabled);
+      if (!btns.length) { e.preventDefault?.(); return; }
+      const first = btns[0];
+      const last = btns[btns.length - 1];
+      if (e.shiftKey && (document.activeElement === first || !content.contains?.(document.activeElement))) {
+        e.preventDefault?.();
+        last.focus?.();
+      } else if (!e.shiftKey && (document.activeElement === last || !content.contains?.(document.activeElement))) {
+        e.preventDefault?.();
+        first.focus?.();
+      }
+    }
+  };
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('keydown', onKeyDown);
+  }
+
+  setTimeout(() => {
+    const btns = Array.from(content.querySelectorAll('button') || []).filter((b) => !b.disabled);
+    const target = btns.find((b) => b.classList?.contains?.('primary')) || btns[0];
+    target?.focus?.();
+  }, 0);
+
   function close() {
+    if (typeof window !== 'undefined' && window.removeEventListener) {
+      window.removeEventListener('keydown', onKeyDown);
+    }
     mask.remove();
     modalStack = modalStack.filter((f) => f !== close);
+    try { prevFocused?.focus?.(); } catch {}
     onClose?.();
   }
   return close;
@@ -95,12 +131,20 @@ export function closeAllModals() {
 
 export function confirmDialog(title, sub, okLabel = '确定', kind = 'primary') {
   return new Promise((res) => {
+    let settled = false;
+    const settle = (val) => {
+      if (!settled) {
+        settled = true;
+        res(val);
+      }
+    };
     modal({
-      title, sub, dismissable: false,
+      title, sub, dismissable: true,
       body: '',
+      onClose: () => settle(false),
       actions: [
-        { label: '取消', kind: 'ghost', onClick: () => res(false) },
-        { label: okLabel, kind, onClick: () => res(true) },
+        { label: '取消', kind: 'ghost', onClick: () => settle(false) },
+        { label: okLabel, kind, onClick: () => settle(true) },
       ],
     });
   });

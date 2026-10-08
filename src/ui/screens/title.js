@@ -10,7 +10,7 @@ export function renderTitle({ app, root }) {
   };
   const wrap = el('div', { class: 'wrap', style: { padding: '40px 0 20px', textAlign: 'center' } });
 
-  wrap.append(el('div', { class: 'big-glyph' }, '🏮'));
+  wrap.append(el('div', { class: 'title-hero-emblem' }, el('span', { class: 'title-emblem-core' }, '🏮')));
   wrap.append(el('h1', { class: 'title-xl' }, '焰 契'));
   wrap.append(el('p', { class: 'subtitle' }, '锈 锚 酒 馆'));
   wrap.append(el('div', { style: { maxWidth: '620px', margin: '24px auto 0', color: 'var(--fg-dim)', fontSize: '14.5px', lineHeight: '1.9' } },

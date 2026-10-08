@@ -39,6 +39,7 @@ async function withTimeout(promise, message, ms = 2500) {
   const { FACILITIES, STAFF } = await import(moduleURL('src/data/facilities.js'));
   const { regionsOf, regionById, encounterById } = await import(moduleURL('src/data/regions.js'));
   const { commissionById, commissionProgress, settleCommission } = await import(moduleURL('src/systems/commissions.js'));
+  const { confirmDialog, closeAllModals } = await import(moduleURL('src/ui/fx.js'));
   let previousApp;
   function fresh(night = 1) {
     previousApp?.goto('title');
@@ -1005,6 +1006,45 @@ async function withTimeout(promise, message, ms = 2500) {
     assert.equal(restored.meta.commissions.lastResult.id, entry.id);
     assert.equal(loadMeta().commissions.completed.length, 1);
     previousApp = restored;
+  });
+
+  await step('confirmDialog resolves false on closeAllModals / Escape without hanging', async () => {
+    let resolved = null;
+    const promise = confirmDialog('测试弹窗', '测试内容').then((res) => { resolved = res; });
+    assert.equal(resolved, null);
+    closeAllModals();
+    await withTimeout(promise, 'confirmDialog failed to resolve on closeAllModals');
+    assert.equal(resolved, false);
+  });
+
+  await step('Tavern lost ending restart requires confirmDialog and protects meta progression', async () => {
+    const app = fresh(3);
+    app.meta.ending = 'lost';
+    app.meta.gold = 500;
+    app.meta.facilities.dorm = 2;
+    app.save();
+    app.goto('tavern');
+    const restartBtn = button('重新点灯', roots.app);
+    await restartBtn.click();
+    const modalEl = roots['modal-root'].querySelector('.modal');
+    assert.ok(modalEl, 'Confirmation modal not shown');
+    const cancelBtn = button('取消', roots['modal-root']);
+    await cancelBtn.click();
+    assert.equal(app.screenName, 'tavern');
+    assert.equal(app.meta.gold, 500);
+    assert.equal(app.meta.facilities.dorm, 2);
+
+    await restartBtn.click();
+    closeAllModals();
+    assert.equal(app.screenName, 'tavern');
+    assert.equal(app.meta.gold, 500);
+
+    await restartBtn.click();
+    const confirmBtn = button('清空重置', roots['modal-root']);
+    await confirmBtn.click();
+    assert.equal(app.screenName, 'title');
+    assert.equal(app.meta.gold, 90);
+    assert.equal(app.meta.night, 1);
   });
 
   previousApp?.goto('title');
