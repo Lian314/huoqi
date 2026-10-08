@@ -79,14 +79,15 @@ export function renderBattle({ app, root, onDispose }) {
   const energyOrb = el('div', { class: 'energy-orb' });
   nodes.energy = energyOrb;
   playerPanel.append(energyOrb);
-  const pName = el('div', { style: { fontWeight: '700', fontSize: '13.5px' } }, run.charName);
+  const pName = el('div', { class: 'p-name' }, run.charName);
   const pHp = el('div', { class: 'cbt-hpnum mono' });
+  const pHead = el('div', { class: 'p-head' }, pName, pHp);
   const pBar = el('div', { class: 'hpbar' });
   const pPiles = el('div', { class: 'piles' });
   nodes.piles = pPiles;
   const pPotions = el('div', { class: 'potion-strip', style: { marginTop: '9px', flexWrap: 'wrap' } });
   nodes.potions = pPotions;
-  playerPanel.append(pName, pHp, pBar, pPiles, pPotions);
+  playerPanel.append(pHead, pBar, pPiles, pPotions);
   arena.append(playerPanel);
   const pNode = playerPanel;
   pNode._uid = 'player';
@@ -151,6 +152,16 @@ export function renderBattle({ app, root, onDispose }) {
     const fill = pBar.querySelector('.hp') || pBar.appendChild(el('i', { class: 'hp' }));
     fill.style.width = `${pct * 100}%`;
     fill.classList.toggle('low', pct < .34);
+    let blockChip = pBar.querySelector('.blockchip');
+    if (p.block > 0) {
+      if (!blockChip) {
+        blockChip = el('div', { class: 'blockchip' });
+        pBar.append(blockChip);
+      }
+      blockChip.textContent = `⛨ ${p.block}`;
+    } else {
+      blockChip?.remove();
+    }
     pName.textContent = run.charName;
     energyOrb.innerHTML = `${battle.energy}<small>/${battle.maxEnergy}</small>`;
 
